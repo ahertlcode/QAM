@@ -1,0 +1,37 @@
+<?php
+
+class apimaker
+{
+    static protected $exception;
+    static protected $db_config;
+    static protected $fmts;
+    public static function makeapi($params)
+    {
+        self::$exception = (isset($params[1]))? explode(",",str_replace("--exclude=","",$params[1])):"";
+        self::$fmts = (isset($params[2]) && strpos("--report",$params[2])===1)?
+            explode(",",str_replace("--report","",$params[2])):"";
+        $dbconfig = explode(",",str_replace("--db=","",$params[0]));
+        for ($i = 0; $i < sizeof($dbconfig); $i++){
+            $tpair = explode(":",$dbconfig[$i]);
+            self::$db_config[$tpair[0]] = $tpair[1];
+        }
+
+        self::getTables();
+    }
+
+    private static function getTables(){
+        $db = new DbHandlers();
+        $db->servername = self::$db_config["host"];
+        $db->dbname = self::$db_config["db"];
+        $db->username = self::$db_config["user"];
+        $db->password = self::$db_config["password"];
+        $tables = $db->show_dbTables($db->dbname);
+        self::makemodel($tables);
+        self::makecontroller($tables);
+        //self::makeform($tables);
+        //self::makereport($tables, self::$fmts);
+    }
+
+    private static function makemodel($tbs){}
+    private static function makecontroller($tbs){}
+}

@@ -1,0 +1,655 @@
+<?php
+
+class appmaker
+{
+    static protected $exception;
+    static protected $db_config;
+    static protected $fmts;
+    static protected $base_dir;
+
+    public static function makeapp($params){
+        self::$exception = (isset($params[1]))? explode(",",str_replace("--exclude=","",$params[1])):"";
+        self::$fmts = (isset($params[2]) && strpos($params[2], "--report")>-1)?
+            explode(",",str_replace("--report=","",$params[2])):"";
+        $dbconfig = explode(",",str_replace("--db=","",$params[0]));
+        for ($i = 0; $i < sizeof($dbconfig); $i++){
+            $tpair = explode(":",$dbconfig[$i]);
+            self::$db_config[$tpair[0]] = $tpair[1];
+        }
+        $tbs = self::getTables();
+        self::makeform($tbs);
+        self::makereport($tbs, self::$fmts);
+        self::create_class($tbs);
+
+        //self::create_javascript($tbs)
+        //self::makemodel($tbs);
+        //self::makecontroller($tbs);
+    }
+
+    private static function getTables(){
+        $db = self::dataObj();
+        $tables = $db->show_dbTables($db->dbname);
+        return $tables;
+    }
+
+    private static function makemodel($tbs){
+        foreach ($tbs as $table){
+            if (self::exempted($table)===false){
+                self::create_model($table);
+            }
+        }
+    }
+
+    private static function exempted($tb){
+        $found = 0;
+        foreach(self::$exception as $t){
+            if ($t == $tb["Tables_in_".self::$db_config["db"]]){
+                $found += 1;
+            } else {
+                $found += 0;
+            }
+        }
+        if ($found > 0){
+                return true;
+            } else {
+                return false;
+        }
+    }
+
+    private static function dataObj(){
+        $db = new DbHandlers();
+        $db->servername = self::$db_config["host"];
+        $db->dbname = self::$db_config["db"];
+        $db->username = self::$db_config["user"];
+        $db->password = self::$db_config["password"];
+        return $db;
+    }
+
+    private static function table_structure($tb, $dbo){
+        $tbl = $tb["Tables_in_".$dbo->dbname];
+        $table_properties = $dbo->tableDesc($tbl);
+        return $table_properties;
+    }
+
+    private static function create_model($tb){
+        $md = self::dataObj();
+        $tabprop = self::table_structure($tb, $md);
+        $file = "../".$md->dbname."/app/model/";
+        self::parsemodel($tabprop, $file);
+    }
+
+    private static function parsemodel($table, $file){
+        if(!file_exists($file)){
+            mkdir($file);
+        }
+    }
+
+    private static function makecontroller($tbs){
+
+    }
+
+    private static function makeform($tbs){
+        foreach ($tbs as $table){
+            if (self::exempted($table) === false){
+                self::create_form($table);
+            }
+        }
+        self::generatemenu($tbs);
+    }
+
+    private static function generatemenu($tables){
+        $menustr = '<nav class="navbar bg-dark navbar-dark">';
+        $menustr .= "\r\n  ".'<ul class="navbar-nav">';
+        $menustr .= '<h1>'.str_replace("db","",ucwords(self::$db_config["db"])).'<sup>&reg;</sup></h1>';
+        foreach ($tables as $tb){
+            if (self::exempted($tb) === false){
+                $menustr .= "\r\n    ".'<li onclick="loadHtmlPage('."'";
+                $menustr .= $tb["Tables_in_".self::$db_config["db"]]."/index.html"."','";
+                $menustr .= "displaywin"."'".');" class="nav-item">';
+                $menustr .= "\r\n      ".'<a class="nav-link" href="#"><i class="fas fa-star"></i>  ';
+                $menustr .= ucwords(str_replace("_"," ", $tb["Tables_in_".self::$db_config["db"]])).'</a>';
+                $menustr .= "\r\n    ".'</li>';
+            }
+        }
+        $menustr .= "\r\n  </ul>\r\n</nav>";
+        self::writetofile($menustr, self::$base_dir."/app/views/", "menu", "html");
+    }
+
+    private static function create_form($table){
+        $db = self::dataObj();
+        $tabprop = self::table_structure($table, $db);
+        $tbl = $table["Tables_in_".$db->dbname];
+        self::$base_dir = "../".$db->dbname;
+        $fdir = self::$base_dir."/app/views/".$tbl."/";
+        self::parse_html_form($tabprop, $tbl, $fdir);
+        self::createIndexfile(self::$base_dir."/app/views");
+        self::createLandingPage(self::$base_dir."/");
+        if ($tbl == "users") {
+            self::createSignUp($tabprop);
+            self::createSignIn($tabprop);
+        }
+    }
+
+    private static function createSignUp($prop){
+        $sheader = self::fheaders();
+        $signup = "\r\n  ".'<body>'."\r\n    ".'<div class="container-fluid">';
+        $signup .= "\r\n      ".'<form method="post" enctype="multipart/form-data">';
+        $signup .= "\r\n        ".'<div class="form-group">';
+        $signup .= "\r\n          ".'<label for="fullname">Full Name</label>';
+        $signup .= "\r\n          ".'<input class="form-control" name="fullname" type="text" ngModel="user.fullname" required>';
+        $signup .= "\r\n          ".'<small>Please Enter your full name with surname first.</small>';
+        $signup .= "\r\n        ".'</div>';
+        $signup .= "\r\n        ".'<div class="form-group">';
+        $signup .= "\r\n          ".'<label for="email">E-mail</label>';
+        $signup .= "\r\n          ".'<input class="form-control" name="email" type="email" ngModel="user.email" required>';
+        $signup .= "\r\n          ".'<small>Please Enter your email.</small>';
+        $signup .= "\r\n        ".'</div>';
+        $signup .= "\r\n        ".'<div class="form-group">';
+        $signup .= "\r\n          ".'<label for="password">Choose Password</label>';
+        $signup .= "\r\n          ".'<input class="form-control" name="password" type="password" ngModel="user.password" required>';
+        $signup .= "\r\n          ".'<small>Choose a strong but easy to remember password.</small>';
+        $signup .= "\r\n        ".'</div>';
+        $signup .= "\r\n        ".'<div class="form-group">';
+        $signup .= "\r\n          ".'<label for="cpassword">Confirm Password</label>';
+        $signup .= "\r\n          ".'<input class="form-control" name="cpassword" type="password" required>';
+        $signup .= "\r\n          ".'<small>Confirm your password.</small>';
+        $signup .= "\r\n        ".'</div>';
+        $signup .= "\r\n        ".'<button type="submit" class="btn btn-primary">&nbsp;Register&nbsp;</button>';
+        $signup .= "\r\n      ".'</form>';
+        $signup .= "\r\n    ".'</div>';
+        $sscripts = self::fscripts();
+        $sclose = "\r\n    ".'</body>'."\r\n  ".'</html>';
+        $shtml = $sheader.$signup.$sscripts.$sclose;
+        self::writetofile($shtml, self::$base_dir."/", "signup", "html");
+    }
+
+    private static function createSignIn($prop){
+        $inheader = self::fheaders();
+        $signin = "\r\n  ".'<body>'."\r\n    ".'<div class="container-fluid">';
+        $signin .= "\r\n  ".'<form method="post" enctype="multipart/form-data">';
+        $signin .= "\r\n    ".'<div class="form-group">';
+        $signin .= "\r\n      ".'<label for="username">Username / E-mail</label>';
+        $signin .= "\r\n      ".'<input class="form-control" name="username" type="text" ngModel="user.username" required>';
+        $signin .= "\r\n      ".'<small>Please your username or e-mail.</small>';
+        $signin .= "\r\n    ".'</div>';
+        $signin .= "\r\n    ".'<div class="form-group">';
+        $signin .= "\r\n      ".'<label for="password">Password</label>';
+        $signin .= "\r\n      ".'<input class="form-control" name="password" type="password" ngModel="user.password" required>';
+        $signin .= "\r\n      ".'<small>Enter your password.</small>';
+        $signin .= "\r\n    ".'</div>';
+        $signin .= "\r\n    ".'<button type="submit" class="btn btn-primary">&nbsp;Sign In&nbsp;</button>';
+        $signin .= "\r\n  ".'</form>';
+        $signin .= '</div>';
+        $inscripts = self::fscripts();
+        $inclose = "\r\n    ".'</body>'."\r\n  ".'</html>';
+        $inbody = $inheader.$signin.$inscripts.$inclose;
+        self::writetofile($inbody, self::$base_dir."/", "signin", "html");
+    }
+
+    private static function parse_html_form($tbpro, $file, $d_file){
+        if(!file_exists($d_file)){
+            mkdir($d_file, 0777, true);
+            self::copy_assets();
+        }
+
+        $header = self::getheaders();
+        $body = self::dohtmlbody($tbpro, $file);
+        $scripts = self::getscripts();
+        $close_form = "\r\n     ".'<button type="submit" class="btn btn-primary">Submit</button>'."\r\n    </form>\r\n   </div>";
+        $close_body = "\r\n  </body> \r\n </html>";
+        $html = $header.$body.$close_form.$scripts.$close_body;
+        self::writetofile($html, $d_file, "edit", "html");
+        self::create_form_new($tbpro, $d_file);
+    }
+
+    private static function create_form_new($tab, $formdir){
+        $fnew = '<div class="container-fluid">';
+        $fnew .= "\r\n  ".'<form method="post" enctype="multipart/form-data">';
+        foreach($tab as $tb){
+            if($tb['Null'] == "NO" && $tb['Field'] !== "id" && $tb['Field'] !== "created_at" && $tb['Field'] !== "updated_at" && $tb['Field'] !== "deleted_at"){
+                $type_size = self::getFieldType($tb['Type']);
+                $type = self::getControlType($tb['Field'], $type_size);
+                if ($type_size < 100 && strpos($tb['Field'], "ender")==false){
+                    $fnew .= self::doControlField($tb['Field'], $formdir, $type);
+                }
+                if(strpos($tb['Field'], "ender")>-1 || strpos($tb['Field'], "sex")>-1){
+                $fnew .= self::doGenderSelect($tb['Field'], $formdir);
+            }
+            if ($type_size > 100 || strpos($tb['Type'], "text") >-1) {
+                $fnew .= self::doTextarea($tb['Field'], $formdir);
+            } else {}
+            }
+
+        }
+        $fnew .= "\r\n    ".'<button type="submit" class="btn btn-primary">&nbsp; Save &nbsp;</button>';
+        $fnew .= "\r\n  ".'</form>'."\r\n".'</div>';
+        self::writetofile($fnew, $formdir, "new", "html");
+    }
+
+    private static function writetofile($content, $path, $filename, $filetype){
+        if(!file_exists($path))
+        {
+            mkdir($path, 0777, true);
+        }
+        $fp = fopen($path.$filename.".".$filetype, "w+");
+        fwrite($fp, $content, strlen($content));
+        fclose($fp);
+    }
+
+    private static function getFieldType($fd){
+        $type_size = 0;
+        if(strpos($fd, "varchar")>-1){
+            $type_size = (int)str_replace(")","",str_replace("varchar(","",$fd));
+        }
+        return $type_size;
+    }
+
+    private static function getControlType($field, $tsize){
+        if( strpos($field, "email")>-1 ){
+            $type = "email";
+        } else if( strpos($field, "phone")>-1 || strpos($field, "mobilephone")>-1 ){
+            $type = "tel";
+        } else if ( strpos($field, "date")>-1 ){
+            $type = "date";
+        } else {
+            $type = "text";
+        }
+        return $type;
+    }
+
+    private static function doGenderSelect($field, $file){
+        $dselect = "\r\n     ".'<div class="form-group">';
+        $dselect .= "\r\n       ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
+        $dselect .= "\r\n       ".'<select class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'">';
+        $dselect .= "\r\n         ".'<option value="Male">Male</option>';
+        $dselect .= "\r\n         ".'<option value="Female">Female</option>';
+        $dselect .= "\r\n       ".'</select>';
+        $dselect .= "\r\n     ".'</div>';
+        return $dselect;
+    }
+
+    private static function dohtmlbody($prop, $file){
+        $html_body = "\r\n  <body> \r\n   ".'<div class="container">'." \r\n   ";
+        $html_body .= ' <form  method="post" enctype="multipart/form-data">';
+        for ($l=0; $l<sizeof($prop); $l++) {
+            $type_size = self::getFieldType($prop[$l]['Type']);
+            $type = self::getControlType($prop[$l]['Field'], $type_size);
+            if ($prop[$l]['Field'] !== "id" && $type_size < 100  && strpos($prop[$l]['Field'], "ender")==false){
+                $html_body .= self::doControlField($prop[$l]['Field'], $file, $type);
+            }
+            if(strpos($prop[$l]['Field'], "ender")>-1 || strpos($prop[$l]['Field'], "sex")>-1){
+                $html_body .= self::doGenderSelect($prop[$l]['Field'], $file);
+            }
+            if ($type_size > 100 || strpos($prop[$l]['Type'], "text") >-1) {
+                $html_body .= self::doTextarea($prop[$l]['Field'], $file);
+            } else {}
+        }
+        return $html_body;
+    }
+
+    private static function doControlField($field, $file, $type){
+        $html_control = "\r\n     ".'<div class="form-group">';
+        $html_control .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
+        $html_control .= "\r\n      ".'<input type="'.$type.'" class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'" placeholder="Enter '.$field.'" />';
+        $html_control .= "\r\n     </div>";
+        return $html_control;
+    }
+
+    private static function doTextarea($field, $file){
+        $dtexta = "\r\n     ".'<div class="form-group">';
+        $dtexta .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
+        $dtexta .= "\r\n      ".'<textarea class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'">Enter '.$field.'</textarea>';
+        $dtexta .= "\r\n     </div>";
+        return $dtexta;
+    }
+
+    private static function getscripts(){
+        $html_body = "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/popper.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/bootstrap.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/angular.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery-ui.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.datepick.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.table2excel.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.uploadfile.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/utility.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/autocomplete.js"></script>';
+
+        return $html_body;
+    }
+
+    private static function getheaders(){
+        $html_str = "<!DOCTYPE html> \r\n ".'<html lang="en">'." \r\n  ";
+        $html_str .= "<head> \r\n   ";
+        $html_str .= '<meta content="text/html" charset="utf-8" >'." \r\n   ";
+        $html_str .= '<meta name="viewport" content="width=device-width, initial-scale=1">'." \r\n   ";
+        $html_str .= '<link rel="stylesheet" href="../../assets/css/bootstrap.min.css" >'." \r\n   ";
+        $html_str .= '<link rel="stylesheet" href="../../assets/css/jquery-ui.css" >'." \r\n   ";
+        $html_str .= '<link rel="stylesheet" href="../../assets/css/jquery.datepick.css" >'." \r\n   ";
+        $html_str .= '<link rel="stylesheet" href="../../assets/css/uploadfile.css" >'." \r\n   ";
+        $html_str .= '<link rel="stylesheet" href="../../assets/css/fontawesome-all.min.css" >'." \r\n  ";
+        $html_str .= "</head>";
+        return $html_str;
+    }
+
+    private static function createIndexfile($path){
+        $head = self::getheaders();
+        $script = self::getscripts();
+        $ibody = "\r\n".' <body onload="loadHtmlPage('."'".'menu.html'."', '".'sidemenu'."'".');">';
+        $ibody .= "\r\n".'  <div class="container-fluid" style="padding:0; margin:0; top:0; left:0;">';
+        $ibody .= "\r\n".'      <div class="row">';
+        $ibody .= "\r\n".'       <div id="sidemenu" class="col-xl-3 col-lg-3 col-md-3 d-lg-inline d-md-inline d-sm-none d-none">';
+        $ibody .= "\r\n".'        </div><div class="col-xl-9 col-lg-9 col-md-9 col-sm-12 col-xs-12"><div id="displaywin">General display</div></div>'."\r\n";
+        $ibody .= '        </div></div>';
+        $ibody_close ="\r\n".'  </body>'."\r\n".' </html>';
+        $bcontent = $head.$ibody.$script.$ibody_close;
+        self::writetofile($bcontent, $path."/", "index", "html");
+    }
+
+    private static function fheaders(){
+        $lheaders = "<!DOCTYPE html>\r\n".'  <html lang="en">'."\r\n";
+        $lheaders .= "    <head>\r\n      <title>Educare&reg;::Portal</title>\r\n";
+        $lheaders .= '        <meta content="text/html" charset="utf-8" >'."\r\n";
+        $lheaders .= '        <meta name="viewport" content="width=device-width, initial-scale=1">'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/bootstrap.min.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/jquery-ui.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/jquery.datepick.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/uploadfile.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/fontawesome-all.min.css" >'."\r\n";
+        $lheaders .= "      </head>";
+        return $lheaders;
+    }
+
+    private static function fscripts(){
+        $lscripts = "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/jquery.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/popper.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/bootstrap.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/angular.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/jquery-ui.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/jquery.datepick.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/jquery.table2excel.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/jquery.uploadfile.min.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/utility.js"></script>';
+        $lscripts .= "\r\n".'      <script language="javascript" type="text/javascript" src="assets/js/autocomplete.js"></script>';
+        return $lscripts;
+    }
+
+    private static function createLandingPage($path){
+        $lheaders = self::fheaders();
+        $lbodyo = "\r\n    ".'<body>'."\r\n      ".'<div class="container-fluid">';
+        $lbodyo .= "\r\n        ".'<div class="row header">';
+        $lbodyo .= "\r\n          ".'<div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 col-xs-6"><h1>'.str_replace("db","",ucwords(self::$db_config["db"]))."<sup>&reg;</sup></h1>\r\n          ".'</div>';
+        $lbodyo .= "\r\n          ".'<div class="col-xl-6 col-lg-6 col-md-6 d-xl-inline d-lg-inline d-md-inline d-sm-none d-none">&nbsp;</div>';
+        $lbodyo .= "\r\n          ".'<div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 col-xs-6 float-right text-right"><a href="signup.html">Sign Up</a> | <a href="signin.html">Sign In</a></div>';
+        $lbodyo .= "\r\n        ".'</div>';
+        $lbodyo .= "\r\n        ".'<div class="row content">&nbsp;</div>';
+        $lbodyo .= "\r\n        ".'<div class="row footer">';
+        $lbodyo .= "\r\n          ".'<div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-12">&copy;&nbsp;2018 AHER TECHNOLOGIES LIMITED</div>';
+        $lbodyo .= "\r\n          ".'<div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-12"><a href="#">link 1</a> | <a href="#">link 2</a> | <a href="#">link 3</a> | <a href="#">link 4</a> | <a href="#">link 5</a> | <a href="#">link 6</a></div>';
+        $lbodyo .= "\r\n        ".'</div>';
+        $lbodyo .="\r\n      ".'</div>';
+        $lscripts = self::fscripts();
+        $lbodyc = "\r\n    ".'</body>'."\r\n  ".'</html>';
+        $landpage = $lheaders.$lbodyo.$lscripts.$lbodyc;
+        self::writetofile($landpage, $path, "index", "html");
+    }
+
+    private static function copy_assets(){
+        if(!file_exists(self::$base_dir.'/assets/css'))
+        {
+            mkdir(self::$base_dir.'/assets/css', 0777, true);
+            mkdir(self::$base_dir.'/assets/js', 0777, true);
+            mkdir(self::$base_dir.'/assets/webfonts', 0777, true);
+            mkdir(self::$base_dir.'/assets/ckeditor', 0777, true);
+        }
+        self::xcopy('css/', self::$base_dir.'/assets/css');
+        self::xcopy('js/', self::$base_dir.'/assets/js');
+        self::xcopy('webfonts/', self::$base_dir.'/assets/webfonts');
+        self::xcopy('ckeditor/', self::$base_dir.'/assets/ckeditor');
+    }
+
+    private static function xcopy($src, $dest) {
+        foreach (scandir($src) as $file) {
+        if (!is_readable($src . '/' . $file)) continue;
+        if (is_dir($src .'/' . $file) && ($file != '.') && ($file != '..') )
+        {
+            mkdir($dest . '/' . $file);
+            self::xcopy($src . '/' . $file, $dest . '/' . $file);
+        } else {
+            copy($src . '/' . $file, $dest . '/' . $file);
+        }
+        }
+    }
+    private static function makereport($tbs, $format=null){
+        if (!is_null($format)) {
+            foreach ($format as $rf) {
+                if ($rf == "table") {
+                    self::maketablereport($tbs);
+                } else if ($rf == "list") {
+                    //self::makelistreport($tbs);
+                } else if ($rf == "card") {
+                    //self::makecardreport($tbs);
+                } else if ($rf == "timeline") {
+                    //self::maketimelinereport($tbs);
+                } else {}
+            }
+        }
+    }
+
+    private static function maketablereport($tables){
+        foreach ($tables as $table) {
+            if (self::exempted($table) === false){
+                self::do_html_table_report($table);
+            }
+        }
+    }
+
+    private static function do_html_table_report($tb){
+        $tbr = array();
+        $kount = 0;
+        $hdb = self::dataObj();
+        $tbpro = self::table_structure($tb, $hdb);
+        $tbl = $tb["Tables_in_".$hdb->dbname];
+        foreach ($tbpro as $tbrow) {
+            if ($tbrow['Null'] == "NO"){
+                $tbr[$kount] = $tbrow;
+                $kount += 1;
+            }
+        }
+        $html_tb = '<div class="container-fluid">';
+        $html_tb .= "\r\n  ".'<table class="table-striped">';
+        $html_tb .= "\r\n    ".'<tr class="noborder">';
+        $html_tb .= '<td colspan="3"><button class="btn btn-primary">';
+        $html_tb .= 'Export</button></td>';
+        if ( sizeof($tbr) > 5 ){
+            $html_tb .= '<td colspan="';
+            $html_tb .= sizeof($tbr)-5;
+            $html_tb .='">&nbsp;</td>';
+        }
+        $html_tb .= '<td colspan="3" align="right"><button onclick="loadHtmlPage('."'{$tbl}/new.html','displaywin'".');" class="btn btn-primary">&nbsp;+&nbsp;';
+        $html_tb .= '|&nbsp;Add New</button></td></tr>';
+        $html_tb .= '<tr>';
+        for($i=0; $i<sizeof($tbr); $i++){
+            $html_tb .= '<td>'.strtoupper(str_replace("_"," ",$tbr[$i]['Field'])).'</td>';
+        }
+        $html_tb .= '<td>&nbsp;</td>';
+        $html_tb .= "\r\n    ".'</tr>';
+        $html_tb .= '<tr ngFor="@'.$tbl.'">';
+        for ($t=0; $t<sizeof($tbr); $t++){
+            $html_tb .= '<td>@'.$tbl.".".$tbr[$t]['Field'].'</td>';
+        }
+        $html_tb .= '<td align="center">&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/edit.html','displaywin'".');" class="fas fa-edit"></i>';
+        $html_tb .= '&nbsp;&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/show.html','displaywin'".');" class="fas fa-eye"></i>';
+        $html_tb .= '&nbsp;&nbsp;<i onclick="deleteData('."'".$tbl."','@".$tbl."."."id'".');" class="fas fa-trash"></i></td>&nbsp;';
+        $html_tb .= '</tr>';
+        $html_tb .= "\r\n  ".'</table>';
+        $html_tb .= "\r\n".'</div>';
+        self::writetofile($html_tb, self::$base_dir."/app/views/".$tbl."/", "index", "html");
+    }
+
+    private static function create_class($tables){
+        foreach ($tables as $tb){
+            if ( self::exempted($tb) === false ){
+                self::do_php_class($tb);
+            }
+        }
+    }
+
+    private static function get_class_docstring(){
+        $docstr = '/**'."\r\n";
+        $docstr .= 'This php script implements '."\r\n\r\n";
+        $docstr .= 'PHP Version 5+'."\r\n";
+        $docstr .= '@Author: Abayomi Apetu'."\r\n";
+        $docstr .= '*/'."\r\n\r\n";
+        $docstr .= 'require "DbHandlers.php";'."\r\n";
+        return $docstr;
+    }
+
+    private static function get_class_properties($table){
+        $publ = array();
+        $priv = array();
+        $dbo = self::dataObj();
+        $slen = strlen($table["Tables_in_".$dbo->dbname]);
+        if ( substr($table["Tables_in_".$dbo->dbname], $slen-1) == 's' ){
+            $nclass = substr($table["Tables_in_".$dbo->dbname], 0, $slen-1);
+        } else {
+            $nclass = $table["Tables_in_".$dbo->dbname];
+        }
+        $defc = 'class '.ucwords($nclass).'{'."\r\n\r\n";
+        $tprop = self::table_structure($table, $dbo);
+        $defc .= '    /** Object(class) properties.*/'."\r\n";
+        foreach ($tprop as $tbrow) {
+            if ($tbrow['Null'] == "NO"){
+                array_push($publ, $tbrow['Field']);
+            } else {
+                array_push($priv, $tbrow['Field']);
+            }
+        }
+        $defc .= self::do_public_prop($publ);
+        $defc .= "\r\n".self::do_private_prop($priv);
+        return $defc;
+    }
+
+    private static function do_public_prop($prop){
+        $pub = "";
+        if(sizeof($prop)>0){
+            $pub = "    /** Object(class) public properties.*/ \r\n";
+            foreach($prop as $ppp){
+                $pub .= "    public $".$ppp.";\r\n";
+            }
+        }
+        return $pub;
+    }
+
+    private static function do_private_prop($prop){
+        $pri = "";
+        if(sizeof($prop)>0){
+            $pri = "    /** Object(class) private properties.*/ \r\n";
+            foreach($prop as $ppp){
+                $pri .= "    private $".$ppp.";\r\n";
+            }
+        }
+        return $pri;
+    }
+
+    private static function get_class_constructor(){
+        $ccon = "    public function _construct(){\r\n";
+        $ccon .= "        /** Todo, add code for system initialization here!*/ \r\n";
+        $ccon.= "    }";
+        return $ccon;
+    }
+
+    private static function get_class_method_save($table){
+        $dbc = self::dataObj();
+        $tbn = $table["Tables_in_".$dbc->dbname];
+        $tpr = self::table_structure($table, $dbc);
+        $savestr ="    public function save(){\r\n";
+        $savestr.='        $db = new DbHandlers();'."\r\n";
+        $savestr.='        $sql = "INSERT INTO '.$tbn.'(";'."\r\n";
+        $itr = 0;
+        foreach($tpr as $field){
+            $savestr.='        if (isset($this->'.$field['Field'].') && $this->'.$field['Field'].'!=="" ) {'."\r\n";
+            if ($itr == 0 ){
+            $savestr.='             $sql.= '."'".$field['Field']."';";
+            } else {
+                $savestr.='            $sql.= '."',".$field['Field']."';";
+            }
+            $itr += 1;
+            $savestr .="    \r\n        }\r\n";
+        }
+        $savestr.='        $sql.= ") VALUES (";'."\r\n";
+        $tr = 0;
+        foreach($tpr as $fld){
+            $savestr.='        if (isset($this->'.$fld['Field']. ') && $this->'.$fld['Field'].'!=="") {'."\r\n";
+            if ($tr == 0 ){
+            $savestr.='            $sql.="'."'{".'$this->'.$fld['Field']."}'".'"'.";";
+            } else {
+                $savestr.='            $sql.="'.",'{".'$this->'.$fld['Field']."}'".'"'.";";
+            }
+            $tr += 1;
+            $savestr .="    \r\n        }\r\n";
+        }
+        $savestr.='        $sql.=")";'."\r\n";
+        $savestr.='        $savein = $db->executeQuery($sql);'."\r\n";
+        $savestr.='        return $savein;'."\r\n";
+        $savestr.="    }";
+        return $savestr;
+    }
+
+    private static function get_class_method_update($tbu){
+        $dbu = self::dataObj();
+        $tbn = $tbu["Tables_in_".$dbu->dbname];
+        $tpr = self::table_structure($tbu, $dbu);
+        $updatestr ='    public function update($pvcol, $pval){'."\r\n";
+        $updatestr.='        $db = new DbHandlers();'."\r\n";
+        $updatestr.='        $sql = "UPDATE '.$tbn.' SET ";'."\r\n";
+        $itr = 0;
+        foreach($tpr as $field){
+            $updatestr.='        if (isset($this->'.$field['Field'].') && $this->'.$field['Field'].'!=="" ) {'."\r\n";
+            if ($itr == 0 ){
+                $updatestr.='             $sql.= " '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+            } else {
+                $updatestr.='            $sql.= ", '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+            }
+            $itr += 1;
+            $updatestr .="    \r\n        }\r\n";
+        }
+        $updatestr.='        $sql .=  " WHERE $pvcol = '."'".'$pval'."'".'";'."\r\n";
+        $updatestr.='        $sql = str_replace("SET ,", "SET ", $sql);'."\r\n";
+        $updatestr.='        $upd = $db->executeQuery($sql);'."\r\n";
+        $updatestr.='        return $upd;'."\r\n";
+        $updatestr.="    }";
+        return $updatestr;
+    }
+
+    private static function get_Class_method_view($tbv){
+        $dbv = self::dataObj();
+        $tb = $tbv["Tables_in_".$dbv->dbname];
+        $tpv = self::table_structure($tbv, $dbv);
+        $viewstr = '    public function view($critcol=null, $critval=null) {'."\r\n";
+        $viewstr .= '        $db = new DbHandlers();'."\r\n";
+        $viewstr .= '        if(is_null($critcol)){'."\r\n";
+        $viewstr .= '            $sql = "SELECT * from '.$tb.' order by created_at DESC";'."\r\n        }";
+        $viewstr .= ' else {'."\r\n";
+        $viewstr .= '        $sql = "SELECT * from '.$tb.' WHERE $critcol ='."'{".'$critval'."}'".'"'."\r\n";
+        $viewstr .= '        }'."\r\n";
+        $viewstr .= '        $datasource = $db->fetchAssoc($sql);'."\r\n";
+        $viewstr .= '        return $datasource;'."\r\n";
+        $viewstr .= '    }';
+        return $viewstr;
+    }
+
+    private static function do_php_class($table){
+        $dbf = self::dataObj();
+        $tbl = $table["Tables_in_".$dbf->dbname];
+        $phpcode = "<?php\r\n";
+        $phpcode .= self::get_class_docstring();
+        $phpcode .= "\r\n".self::get_class_properties($table);
+        $phpcode .= "\r\n\r\n".self::get_class_constructor();
+        $phpcode .= "\r\n\r\n".self::get_class_method_save($table);
+        $phpcode .= "\r\n\r\n".self::get_class_method_update($table);
+        $phpcode .= "\r\n\r\n".self::get_Class_method_view($table);
+        $phpcode .= "\r\n}";
+        self::writetofile($phpcode, self::$base_dir."/server/", $tbl, "php");
+    }
+}

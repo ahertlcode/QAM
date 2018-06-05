@@ -1,0 +1,22 @@
+<?php
+include_once "DbHandlers.php";
+include_once "api_maker";
+include_once "app_maker";
+
+if (sizeof($argv)>1){
+    //var_dump($argv);
+    $param = array();
+    for ($i=2; $i<sizeof($argv); $i++){
+        array_push($param, $argv[$i]);
+    }
+    if ($argv[1] == "--api"){
+        apimaker::makeapi($param);
+    } else if ($argv[1] == "--app") {
+        appmaker::makeapp($param);
+    } else {
+        echo $argv[1]." is not a known maker command";
+    }
+} else {
+    echo "You must specify arguments to for the script.";
+}
+?>

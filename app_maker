@@ -631,9 +631,9 @@ class appmaker
         $viewstr .= '        if(is_null($critcol)){'."\r\n";
         $viewstr .= '            $sql = "SELECT * from '.$tb.' order by created_at DESC";'."\r\n        }";
         $viewstr .= ' else {'."\r\n";
-        $viewstr .= '        $sql = "SELECT * from '.$tb.' WHERE $critcol ='."'{".'$critval'."}'".'"'."\r\n";
+        $viewstr .= '        $sql = "SELECT * from '.$tb.' WHERE $critcol ='."'{".'$critval'."}'".'";'."\r\n";
         $viewstr .= '        }'."\r\n";
-        $viewstr .= '        $datasource = $db->fetchAssoc($sql);'."\r\n";
+        $viewstr .= '        $datasource = $db->getRowAssoc($sql);'."\r\n";
         $viewstr .= '        return $datasource;'."\r\n";
         $viewstr .= '    }';
         return $viewstr;

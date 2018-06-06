@@ -590,6 +590,7 @@ class appmaker
             $savestr .="    \r\n        }\r\n";
         }
         $savestr.='        $sql.=")";'."\r\n";
+        $savestr.='        $sql = str_replace("(,", "(", $sql);'."\r\n";
         $savestr.='        $savein = $db->executeQuery($sql);'."\r\n";
         $savestr.='        return $savein;'."\r\n";
         $savestr.="    }";
@@ -622,14 +623,26 @@ class appmaker
         return $updatestr;
     }
 
+    private static function get_class_method_delete($tbs){
+        $dbd = self::dataObj();
+        $tb = $tbs["Tables_in_".$dbd->dbname];
+        $delstr = '    public  function delete($critcol, $critval){'."\r\n";
+        $delstr .='        $db = new DbHandlers();'."\r\n";
+        $delstr .='        $sql = "DELETE FROM '.$tb.' WHERE $critcol ='."'{".'$critval'."}'".'";'."\r\n";
+        $delstr .='        $d_out = $db->executeQuery($sql);'."\r\n";
+        $delstr .='        return $d_out;'."\r\n";
+        $delstr .='    }';
+        return $delstr;
+    }
+
     private static function get_Class_method_view($tbv){
         $dbv = self::dataObj();
         $tb = $tbv["Tables_in_".$dbv->dbname];
-        $tpv = self::table_structure($tbv, $dbv);
+        //$tpv = self::table_structure($tbv, $dbv);
         $viewstr = '    public function view($critcol=null, $critval=null) {'."\r\n";
         $viewstr .= '        $db = new DbHandlers();'."\r\n";
         $viewstr .= '        if(is_null($critcol)){'."\r\n";
-        $viewstr .= '            $sql = "SELECT * from '.$tb.' order by created_at DESC";'."\r\n        }";
+        $viewstr .= '            $sql = "SELECT * from '.$tb.' order by id DESC";'."\r\n        }";
         $viewstr .= ' else {'."\r\n";
         $viewstr .= '        $sql = "SELECT * from '.$tb.' WHERE $critcol ='."'{".'$critval'."}'".'";'."\r\n";
         $viewstr .= '        }'."\r\n";
@@ -649,6 +662,7 @@ class appmaker
         $phpcode .= "\r\n\r\n".self::get_class_method_save($table);
         $phpcode .= "\r\n\r\n".self::get_class_method_update($table);
         $phpcode .= "\r\n\r\n".self::get_Class_method_view($table);
+        $phpcode .= "\r\n\r\n".self::get_class_method_delete($table);
         $phpcode .= "\r\n}";
         self::writetofile($phpcode, self::$base_dir."/server/", $tbl, "php");
     }

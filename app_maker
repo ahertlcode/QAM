@@ -20,6 +20,7 @@ class appmaker
         self::makeform($tbs);
         self::makereport($tbs, self::$fmts);
         self::create_class($tbs);
+        self::create_http_api($tbs);
 
         //self::create_javascript($tbs)
         //self::makemodel($tbs);
@@ -665,5 +666,31 @@ class appmaker
         $phpcode .= "\r\n\r\n".self::get_class_method_delete($table);
         $phpcode .= "\r\n}";
         self::writetofile($phpcode, self::$base_dir."/server/", $tbl, "php");
+    }
+
+    private static function create_http_api($tables){
+        foreach ($tables as $table) {
+            if (self::exempted($table) === false){
+                self::do_http_api($table);
+            }
+        }
+    }
+
+    private static function get_api_header($tbl){
+        $ahstr = 'header("Access-Control-Allow-Origin: *");'."\r\n";
+        $ahstr .= 'header("Content-Type: text/json");'."\r\n";
+        $ahstr .= 'ini_set("memory_limit", "1024M")'."\r\n\r\n";
+        $ahstr .= 'require "../server/renderer.php";'."\r\n";
+        $ahstr .= 'require "../server/'.$tbl.'.php";'."\r\n\r\n";
+        return $ahstr;
+    }
+
+    private static function do_http_api($table){
+        $dbh = self::dataObj();
+        $tbh = $table["Tables_in_".$dbh->dbname];
+        $apistr = "<?php\r\n";
+        $apistr .= self::get_class_docstring();
+        $apistr .= "\r\n".self::get_api_header($tbh);
+        self::writetofile($apistr, self::$base_dir."/api/", $tbh."_http_api", "php");
     }
 }

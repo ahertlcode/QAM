@@ -502,7 +502,6 @@ class appmaker
         $docstr .= 'PHP Version 5+'."\r\n";
         $docstr .= '@Author: Abayomi Apetu'."\r\n";
         $docstr .= '*/'."\r\n\r\n";
-        $docstr .= 'require "DbHandlers.php";'."\r\n";
         return $docstr;
     }
 
@@ -516,7 +515,8 @@ class appmaker
         } else {
             $nclass = $table["Tables_in_".$dbo->dbname];
         }
-        $defc = 'class '.ucwords($nclass).'{'."\r\n\r\n";
+        $defc = 'require "DbHandlers.php";'."\r\n\r\n";
+        $defc .= 'class '.ucwords($nclass).'{'."\r\n\r\n";
         $tprop = self::table_structure($table, $dbo);
         $defc .= '    /** Object(class) properties.*/'."\r\n";
         foreach ($tprop as $tbrow) {
@@ -679,10 +679,86 @@ class appmaker
     private static function get_api_header($tbl){
         $ahstr = 'header("Access-Control-Allow-Origin: *");'."\r\n";
         $ahstr .= 'header("Content-Type: text/json");'."\r\n";
-        $ahstr .= 'ini_set("memory_limit", "1024M")'."\r\n\r\n";
+        $ahstr .= 'ini_set("memory_limit", "1024M");'."\r\n\r\n";
         $ahstr .= 'require "../server/renderer.php";'."\r\n";
         $ahstr .= 'require "../server/'.$tbl.'.php";'."\r\n\r\n";
         return $ahstr;
+    }
+
+    private static function get_api_data(){
+        $datastr ='if(isset($_POST)){'."\r\n";
+        $datastr .="    //strip the trailing 's' character from the table ";
+        $datastr .="name to created the model reference name.\r\n";
+        $datastr .='    if($_POST["table"][strlen($_POST["table"])-1] == "s"){'."\r\n";
+        $datastr .='        $obj = str_replace($_POST["table"]';
+        $datastr .='[strlen($_POST["table"])-1], "",$_POST["table"]);'."\r\n";
+        $datastr .="    } else {\r\n";
+        $datastr .='        $obj = $_POST["table"];'."\r\n    }\r\n\r\n";
+        $datastr .="//capitalize the first character of the class name.\r\n";
+        $datastr .='$objc = ucwords($obj);'."\r\n\r\n";
+        $datastr .="//create an instance of the model.\r\n";
+        $datastr .='$$obj = new $objc();'."\r\n\r\n";
+        $datastr .="//extract key data from using key value pair.\r\n";
+        $datastr .='foreach($_POST["data"] as $ky => $v){'."\r\n";
+        $datastr .='    $$obj->$ky = $_POST["data"][$ky];'."\r\n";
+        $datastr .='}'."\r\n";
+        return $datastr;
+    }
+
+    private static function get_api_save(){
+        $savestr = "//save the data to to model.";
+        $savestr .= 'if($_POST["method"] == "save") {'."\r\n";
+        $savestr .= '    $sout = $$obj->save();'."\r\n";
+        $savestr .= '    if ($sout == 1)'."\r\n";
+        $savestr .= '        $sout = array("status"=>"success", "msg"=>';
+        $savestr .= '"{$objc} saved successfully.");'."\r\n";
+        $savestr .= '    else'."\r\n";
+        $savestr .= '        $sout = array("status"=>"fail", "msg"=>';
+        $savestr .='"{$objc} could not be saved.");'."\r\n";
+        $savestr .='}'."\r\n";
+        return $savestr;
+    }
+
+    private static function get_api_update(){
+        $updatestr = "//update the supply to model.";
+        $updatestr .= 'if($_POST["method"] == "update") {'."\r\n";
+        $updatestr .= '    if (isset($_POST["col_name"]) && isset($_POST["col_value"]))'."\r\n";
+        $updatestr .= '        $sout = $$obj->update($_POST['col_name'], $_POST['col_value']);'."\r\n";
+        $updatestr .= '    else'."\r\n";
+        $updatestr .= '        $sout = array("status"=>"warning", "msg"=>"To update you ';
+        $updatestr .= 'must specific a criteria.");'."\r\n";
+        $updatestr .= '}';
+        return $updatestr;
+    }
+
+    private static function get_api_view(){
+        $viewstr = "//retrieve records from the model."
+        $viewstr .= 'if($_POST['method'] == "view") {
+    if (isset($_POST['col_name']) && isset($_POST['col_value']))
+        $sout = $$obj->view($_POST['col_name'], $_POST['col_value']);
+    else
+        $sout = $$obj->view();
+ }';
+        return $viewstr;
+    }
+
+    private static function get_api_delete(){
+        $delstr = "//delete record from model";
+        $delstr .= 'if($_POST['method'] == "delete") {
+    if (isset($_POST['col_name']) && isset($_POST['col_value']))
+        $sout = $$obj->delete($_POST['col_name'], $_POST['col_value']);
+    else
+        $sout = array("status"=>"warning", "msg"=>"To delete you must specific a criteria.");
+}';
+        return $delstr;
+    }
+
+    private static function get_api_close(){
+        $clstr = "//send out put to the stand output.";
+        $clstr .= '$rnd = new renderer();
+echo $rnd->render("json", $sout, "{$obj}, <list></list>");
+}';
+        return $clstr;
     }
 
     private static function do_http_api($table){
@@ -691,6 +767,12 @@ class appmaker
         $apistr = "<?php\r\n";
         $apistr .= self::get_class_docstring();
         $apistr .= "\r\n".self::get_api_header($tbh);
+        $apistr .= "\r\n".self::get_api_data();
+        $apistr .= "\r\n".self::get_api_save();
+        $apistr .= "\r\n".self::get_api_update();
+        $apistr .= "\r\n".self::get_api_view();
+        $apistr .= "\r\n".self::get_api_delete();
+        $apistr .= "\r\n".self::get_api_close();
         self::writetofile($apistr, self::$base_dir."/api/", $tbh."_http_api", "php");
     }
 }

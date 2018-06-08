@@ -693,20 +693,21 @@ class appmaker
         $datastr .='        $obj = str_replace($_POST["table"]';
         $datastr .='[strlen($_POST["table"])-1], "",$_POST["table"]);'."\r\n";
         $datastr .="    } else {\r\n";
-        $datastr .='        $obj = $_POST["table"];'."\r\n    }\r\n\r\n";
+        $datastr .='        $obj = $_POST["table"];'."\r\n}\r\n\r\n";
         $datastr .="//capitalize the first character of the class name.\r\n";
         $datastr .='$objc = ucwords($obj);'."\r\n\r\n";
         $datastr .="//create an instance of the model.\r\n";
         $datastr .='$$obj = new $objc();'."\r\n\r\n";
         $datastr .="//extract key data from using key value pair.\r\n";
-        $datastr .='foreach($_POST["data"] as $ky => $v){'."\r\n";
-        $datastr .='    $$obj->$ky = $_POST["data"][$ky];'."\r\n";
-        $datastr .='}'."\r\n";
+        $datastr .='if (isset($_POST["data"]) && !empty($_POST["data"])) {'."\r\n";
+        $datastr .='    foreach($_POST["data"] as $ky => $v){'."\r\n";
+        $datastr .='        $$obj->$ky = $_POST["data"][$ky];'."\r\n";
+        $datastr .='    }'."\r\n".'}'."\r\n";
         return $datastr;
     }
 
     private static function get_api_save(){
-        $savestr = "//save the data to to model.";
+        $savestr = "//save the data to to model.\r\n";
         $savestr .= 'if($_POST["method"] == "save") {'."\r\n";
         $savestr .= '    $sout = $$obj->save();'."\r\n";
         $savestr .= '    if ($sout == 1)'."\r\n";
@@ -720,22 +721,26 @@ class appmaker
     }
 
     private static function get_api_update(){
-        $updatestr = "//update the supply to model.";
+        $updatestr = "//update the supply record in the model.\r\n";
         $updatestr .= 'if($_POST["method"] == "update") {'."\r\n";
-        $updatestr .= '    if (isset($_POST["col_name"]) && isset($_POST["col_value"]))'."\r\n";
-        $updatestr .= '        $sout = $$obj->update($_POST['col_name'], $_POST['col_value']);'."\r\n";
-        $updatestr .= '    else'."\r\n";
+        $updatestr .= '    if (isset($_POST["col_name"]) && isset($_POST["col_value"])){'."\r\n";
+        $updatestr .= '        $sout = $$obj->update($_POST["col_name"], $_POST["col_value"]);'."\r\n";
+        $updatestr .= '        if($sout == 1)'."\r\n";
+        $updatestr .= '            $sout = array("status"=>"success", "msg"=>"{$objc} updated successfully.");'."\r\n";
+        $updatestr .= '        else'."\r\n";
+        $updatestr .= '            $sout = array("status"=>"failed", "msg"=>"There is an error, {$objc} could not be updated.");'."\r\n";
+        $updatestr .= '    } else {'."\r\n";
         $updatestr .= '        $sout = array("status"=>"warning", "msg"=>"To update you ';
         $updatestr .= 'must specific a criteria.");'."\r\n";
-        $updatestr .= '}';
+        $updatestr .= '    }'."\r\n".'}';
         return $updatestr;
     }
 
     private static function get_api_view(){
-        $viewstr = "//retrieve records from the model."
+        $viewstr = "//retrieve records from the model.\r\n";
         $viewstr .= 'if($_POST["method"] == "view") {'."\r\n";
-        $viewstr .= '    if (isset($_POST['col_name']) && isset($_POST['col_value']))'."\r\n";
-        $viewstr .= '        $sout = $$obj->view($_POST['col_name'], $_POST['col_value']);'."\r\n";
+        $viewstr .= '    if (isset($_POST["data"]["col_name"]) && isset($_POST["data"]["col_value"]))'."\r\n";
+        $viewstr .= '        $sout = $$obj->view($_POST["data"]["col_name"], $_POST["data"]["col_value"]);'."\r\n";
         $viewstr .= '    else'."\r\n";
         $viewstr .= '        $sout = $$obj->view();'."\r\n";
         $viewstr .= '}'."\r\n";
@@ -743,18 +748,22 @@ class appmaker
     }
 
     private static function get_api_delete(){
-        $delstr = "//delete record from model";
-        $delstr .= 'if($_POST['method'] == "delete") {'."\r\n";
-        $delstr .= '    if (isset($_POST['col_name']) && isset($_POST['col_value']))'."\r\n";
-        $delstr .= '        $sout = $$obj->delete($_POST['col_name'], $_POST['col_value']);'."\r\n";
-        $delstr .= '    else'."\r\n";
+        $delstr = "//delete record from model.\r\n";
+        $delstr .= 'if($_POST["method"] == "delete") {'."\r\n";
+        $delstr .= '    if (isset($_POST["data"]["col_name"]) && isset($_POST["data"]["col_value"])){'."\r\n";
+        $delstr .= '        $sout = $$obj->delete($_POST["data"]["col_name"], $_POST["data"]["col_value"]);'."\r\n";
+        $delstr .= '        if($sout == 1)'."\r\n";
+        $delstr .= '            $sout = array("status"=>"success", "msg"=>"{$objc} deleted successfully.");'."\r\n";
+        $delstr .= '        else'."\r\n";
+        $delstr .= '            $sout = array("status"=>"failed", "msg"=>"There is an error, {$objc} could not be deleted.");'."\r\n";
+        $delstr .= '    } else {'."\r\n";
         $delstr .= '        $sout = array("status"=>"warning", "msg"=>"To delete you must specific a criteria.");'."\r\n";
-        $delstr .= '}'."\r\n";
+        $delstr .= '    }'."\r\n".'}'."\r\n";
         return $delstr;
     }
 
     private static function get_api_close(){
-        $clstr = "//send out put to the stand output.";
+        $clstr = "//send out put to the stand output.\r\n";
         $clstr .= '$rnd = new renderer();'."\r\n";
         $clstr .= 'echo $rnd->render("json", $sout, "{$obj}, <list></list>");'."\r\n";
         $clstr .= '}'."\r\n";

@@ -733,31 +733,31 @@ class appmaker
 
     private static function get_api_view(){
         $viewstr = "//retrieve records from the model."
-        $viewstr .= 'if($_POST['method'] == "view") {
-    if (isset($_POST['col_name']) && isset($_POST['col_value']))
-        $sout = $$obj->view($_POST['col_name'], $_POST['col_value']);
-    else
-        $sout = $$obj->view();
- }';
+        $viewstr .= 'if($_POST["method"] == "view") {'."\r\n";
+        $viewstr .= '    if (isset($_POST['col_name']) && isset($_POST['col_value']))'."\r\n";
+        $viewstr .= '        $sout = $$obj->view($_POST['col_name'], $_POST['col_value']);'."\r\n";
+        $viewstr .= '    else'."\r\n";
+        $viewstr .= '        $sout = $$obj->view();'."\r\n";
+        $viewstr .= '}'."\r\n";
         return $viewstr;
     }
 
     private static function get_api_delete(){
         $delstr = "//delete record from model";
-        $delstr .= 'if($_POST['method'] == "delete") {
-    if (isset($_POST['col_name']) && isset($_POST['col_value']))
-        $sout = $$obj->delete($_POST['col_name'], $_POST['col_value']);
-    else
-        $sout = array("status"=>"warning", "msg"=>"To delete you must specific a criteria.");
-}';
+        $delstr .= 'if($_POST['method'] == "delete") {'."\r\n";
+        $delstr .= '    if (isset($_POST['col_name']) && isset($_POST['col_value']))'."\r\n";
+        $delstr .= '        $sout = $$obj->delete($_POST['col_name'], $_POST['col_value']);'."\r\n";
+        $delstr .= '    else'."\r\n";
+        $delstr .= '        $sout = array("status"=>"warning", "msg"=>"To delete you must specific a criteria.");'."\r\n";
+        $delstr .= '}'."\r\n";
         return $delstr;
     }
 
     private static function get_api_close(){
         $clstr = "//send out put to the stand output.";
-        $clstr .= '$rnd = new renderer();
-echo $rnd->render("json", $sout, "{$obj}, <list></list>");
-}';
+        $clstr .= '$rnd = new renderer();'."\r\n";
+        $clstr .= 'echo $rnd->render("json", $sout, "{$obj}, <list></list>");'."\r\n";
+        $clstr .= '}'."\r\n";
         return $clstr;
     }
 

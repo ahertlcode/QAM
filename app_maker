@@ -808,7 +808,166 @@ class appmaker
         }
     }
 
-    private static function do_js_file($tb){
+    private static function get_table_columns($tbl){
+        $dbc = self::dataObj();
+        $tab = self::table_structure($tbl, $dbc);
+        $tcolumns = array();
+        foreach ($tab as $row){
+            array_push($tcolumns, $row['Field']);
+        }
+        return $tcolumns;
+    }
 
+    private static function get_tab_string($tb){
+        $cols = self::get_table_columns($tb);
+        $dstr = "";
+        $iter = 0;
+        foreach ($cols as $dcel){
+            if($iter < sizeof($cols)-1){
+            $dstr .= $dcel.":'', ";
+            $iter++;
+            } else { $dstr .= $dcel.":''"; }
+        }
+        return $dstr;
+    }
+
+    private static function get_js_save_method($tbs){
+        $tb = str_replace("s", "", $tbs);
+        $jsave = '    $scope.'.$tb.'_save = function() {'."\r\n";
+        $jsave .='        if (this.update == undefined) {'."\r\n";
+        $jsave .='            var pb = {"method":"save", "table":"'.$tbs.'", "data":this.'.$tb.'};'."\r\n";
+        $jsave .='            save_'.$tb.'($scope, $http, pb);'."\r\n";
+        $jsave .='        } else {'."\r\n";
+        $jsave .='            var data = Object.assign(this.'.$tb.', this.update);'."\r\n";
+        $jsave .='            var pu = {"method":"update", "table":"'.$tbs.'", "data":data};'."\r\n";
+        $jsave .='            update_'.$tb.'($scope, $http, pu);'."\r\n";
+        $jsave .='        }'."\r\n".'    };'."\r\n\r\n";
+        return $jsave;
+    }
+
+    private static function get_js_view_method($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $jsview = '    $scope.'.$tb.'_view_single = function(coln, colv){'."\r\n";
+        $jsview .='        show_selected($scope, $http, coln, colv);'."\r\n";
+        $jsview .='    };'."\r\n\r\n";
+        return $jsview;
+    }
+
+    private static function get_js_update_method($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $upstr = '    $scope.do_'.$tb.'_update = function(colname, colvalue){'."\r\n";
+        $upstr .='        $scope.update = {"col_name":colname, "col_value":colvalue};'."\r\n";
+        $upstr .='        show_selected($scope, $http, colname, colvalue);'."\r\n";
+        $upstr .='    };'."\r\n\r\n";
+        return $upstr;
+    }
+
+    private static function get_js_delete_method($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $delstr = '    $scope.'.$tb.'_delete = function(coln, colv){'."\r\n";
+        $delstr .='        delete_'.$tb.'($scope, $http, coln, colv);'."\r\n";
+        $delstr .='    };'."\r\n\r\n";
+        return $delstr;
+    }
+
+    private static function get_js_main_view($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $mainstr ='    $http({'."\r\n";
+        $mainstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
+        $mainstr .='        method: "POST",'."\r\n";
+        $mainstr .='        data:{"method":"view", "table":"'.$tbl.'"}'."\r\n";
+        $mainstr .='    }).then((result) =>{'."\r\n";
+        $mainstr .='        $scope.'.$tbl.' = result.data;'."\r\n";
+        $mainstr .='    }, function(error){'."\r\n";
+        $mainstr .='        $scope.berror = error.statusText;'."\r\n";
+        $mainstr .='    });'."\r\n\r\n";
+        return $mainstr;
+    }
+
+    private static function get_js_save($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $gstr = 'function save_'.$tb.'($scope, $http, pb){'."\r\n";
+        $gstr .='    $http({'."\r\n";
+        $gstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
+        $gstr .='        method: "POST",'."\r\n";
+        $gstr .='        data:pb'."\r\n";
+        $gstr .='    }).then((result) =>{'."\r\n";
+        $gstr .='        $scope.berror = result.data.msg;'."\r\n";
+        $gstr .='    }, function(error){'."\r\n";
+        $gstr .='        $scope.berror = error.statusText;'."\r\n";
+        $gstr .='    });'."\r\n".'}'."\r\n\r\n";
+        return $gstr;
+    }
+
+    private static function get_js_view($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $vstr = 'function show_selected($scope, $http, column, value){'."\r\n";
+        $vstr .='    $http({'."\r\n";
+        $vstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
+        $vstr .='        method: "POST",'."\r\n";
+        $vstr .='        data:{"method":"view", "table":"'.$tbl.'", "data":';
+        $vstr .='{"col_name":column, "col_value":value}}'."\r\n";
+        $vstr .='    }).then((result) =>{'."\r\n";
+        $vstr .='        $scope.'.$tb.' = result.data.'.$tb.';'."\r\n";
+        $vstr .='    }, function(error){'."\r\n";
+        $vstr .='        $scope.berror = error.statusText;'."\r\n";
+        $vstr .='    });'."\r\n".'}'."\r\n\r\n";
+        return $vstr;
+    }
+
+    private static function do_js_file($tb){
+        $jdb = self::dataObj();
+        $jtb = $tb["Tables_in_".$jdb->dbname];
+        $jstr ="//javascript file for ".$jtb." using angularjs for data-binding.\r\n";
+        $jstr .='let base_api_url = "http://localhost:8085/'.$jdb->dbname.'/api/";'."\r\n";
+        $jstr .='let user = local_store({}, "'.str_replace("db", "",$jdb->dbname).'-user", "get");'."\r\n";
+        $jstr .="let app = angular.module('".$jtb."View', []);\r\n\r\n";
+        $jstr .='app.controller ('."'".$jtb."Ctrl'".', function($scope, $http) {'."\r\n\r\n";
+        $jstr .='    this.'.str_replace("s", "",$jtb).' = {user:user, ';
+        $jstr .= self::get_tab_string($tb);
+        $jstr .='};'."\r\n";
+        $jstr .="    this.update = {col_name:'', col_value:''};\r\n\r\n";
+        $jstr .= self::get_js_save_method($jtb); //create and update method
+        $jstr .= self::get_js_view_method($jtb); //retrieve method
+        $jstr .= self::get_js_update_method($jtb); //update method trigger
+        $jstr .= self::get_js_delete_method($jtb); //delete method
+        $jstr .= self::get_js_main_view($jtb); //main model view
+        $jstr .="});\r\n\r\n";
+        $jstr .= self::get_js_save($jtb);
+        $jstr .= self::get_js_view($jtb);
+        $jstr .= self::get_js_update($jtb);
+        $jstr .= self::get_js_delete($jtb);
+        self::writetofile($jstr, self::$base_dir."/assets/src/", $jtb, "js");
+    }
+
+    private static function get_js_update($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $jstr ='function update_'.$tb.'($scope, $http, pb){'."\r\n";
+        $jstr .='    $http({'."\r\n";
+        $jstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
+        $jstr .='        method: "POST",'."\r\n";
+        $jstr .='        data:pb'."\r\n";
+        $jstr .='    }).then((result) =>{'."\r\n";
+        $jstr .='        $scope.berror = result.data.msg;'."\r\n";
+        $jstr .='    }, function(error){'."\r\n";
+        $jstr .='        $scope.berror = error.statusText;'."\r\n";
+        $jstr .='    });'."\r\n".'}'."\r\n\r\n";
+        return $jstr;
+    }
+
+    private static function get_js_delete($tbl){
+        $tb = str_replace("s", "", $tbl);
+        $dstr = 'function delete_'.$tb.'($scope, $http, column, value){'."\r\n";
+        $dstr .='    $http({'."\r\n";
+        $dstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
+        $dstr .='        method: "POST",'."\r\n";
+        $dstr .='        data:{"method":"delete", "table":"'.$tbl.'", "data":';
+        $dstr .='{"col_name":column, "col_value":value}}';
+        $dstr .='    }).then((result) =>{'."\r\n";
+        $dstr .='        $scope.berror = result.data.msg;'."\r\n";
+        $dstr .='    }, function(error){'."\r\n";
+        $dstr .='        $scope.berror = error.statusText;'."\r\n";
+        $dstr .='    });'."\r\n".'}'."\r\n\r\n";
+        return $dstr;
     }
 }

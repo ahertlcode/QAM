@@ -2,7 +2,7 @@ function loadHtmlPage(page, target, scriptx=null) {
     var loc = page;
     if(scriptx !== null){
         $("#"+target).load(loc,function(){
-            $.getScript("js/"+scriptx);
+            $.getScript(scriptx);
         });
     }else{
     $("#" + target).load(loc);
@@ -14,7 +14,7 @@ function fillDropDown(data, drop){
     data.databases.forEach(function(db) {
     let valx = db.Database;
     let texti = db.Database;
-        
+
     let option = $('<option/>');
     option.attr({ 'value': valx }).text(texti);
     $('#' + drop).append(option);
@@ -30,8 +30,14 @@ function fillState(nation) {
 }
 
 function processform(fid) {
-    var frmData = $("#" + fid).serialize();
-    return frmData;
+    var fm = {};
+    var frmData = $("#" + fid).serializeArray();
+    if (frmData.length > 0) {
+        frmData.forEach(function(fData){
+            fm[fData["name"]] = fData["value"];
+        });
+    }
+    return fm;
 }
 
 function clearbox(ob) {
@@ -167,6 +173,25 @@ function previewImage(file, prevwin) {
     reader.readAsDataURL(file);
 }
 
+
+function show_alert(msg){
+    alert(msg);
+}
+
 function logError(ErrObj) {
     console.log(ErrObj);
+}
+
+function toggle_display(id=null){
+    hideall();
+    showthis(id);
+}
+
+function hideall(){
+    $(".display").removeClass("display-show");
+    $(".display").addClass("display-hide");
+}
+
+function showthis(obj){
+    $("#"+obj).addClass("display-show");
 }

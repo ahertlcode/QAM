@@ -104,10 +104,8 @@ class appmaker
         $menustr .= '<h1>'.str_replace("db","",ucwords(self::$db_config["db"])).'<sup>&reg;</sup></h1>';
         foreach ($tables as $tb){
             if (self::exempted($tb) === false){
-                $menustr .= "\r\n    ".'<li onclick="loadHtmlPage('."'";
-                $menustr .= $tb["Tables_in_".self::$db_config["db"]]."/index.html"."','";
-                $menustr .= "displaywin"."'".');" class="nav-item">';
-                $menustr .= "\r\n      ".'<a class="nav-link" href="#"><i class="fas fa-star"></i>  ';
+                $menustr .= "\r\n    ".'<li class="nav-item">';
+                $menustr .= "\r\n      ".'<a class="nav-link" href="http://localhost:8085/'.self::$db_config["db"].'/app/views/'.$tb["Tables_in_".self::$db_config["db"]].'/"><i class="fas fa-star"></i>  ';
                 $menustr .= ucwords(str_replace("_"," ", $tb["Tables_in_".self::$db_config["db"]])).'</a>';
                 $menustr .= "\r\n    ".'</li>';
             }
@@ -123,7 +121,7 @@ class appmaker
         self::$base_dir = "../".$db->dbname;
         $fdir = self::$base_dir."/app/views/".$tbl."/";
         self::parse_html_form($tabprop, $tbl, $fdir);
-        self::createIndexfile(self::$base_dir."/app/views");
+        self::createIndexfile(self::$base_dir."/app/views", $db->dbname);
         self::createLandingPage(self::$base_dir."/");
         if ($tbl == "users") {
             self::createSignUp($tabprop);
@@ -321,26 +319,28 @@ class appmaker
 
     private static function getheaders(){
         $html_str = "<!DOCTYPE html> \r\n ".'<html lang="en">'." \r\n  ";
-        $html_str .= "<head> \r\n   ";
-        $html_str .= '<meta content="text/html" charset="utf-8" >'." \r\n   ";
-        $html_str .= '<meta name="viewport" content="width=device-width, initial-scale=1">'." \r\n   ";
-        $html_str .= '<link rel="stylesheet" href="../../assets/css/bootstrap.min.css" >'." \r\n   ";
-        $html_str .= '<link rel="stylesheet" href="../../assets/css/jquery-ui.css" >'." \r\n   ";
-        $html_str .= '<link rel="stylesheet" href="../../assets/css/jquery.datepick.css" >'." \r\n   ";
-        $html_str .= '<link rel="stylesheet" href="../../assets/css/uploadfile.css" >'." \r\n   ";
-        $html_str .= '<link rel="stylesheet" href="../../assets/css/fontawesome-all.min.css" >'." \r\n  ";
-        $html_str .= "</head>";
+        $html_str .= "    <head> \r\n   ";
+        $html_str .= '        <meta content="text/html" charset="utf-8" >'." \r\n   ";
+        $html_str .= '        <meta name="viewport" content="width=device-width, initial-scale=1">'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/jquery-ui.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/jquery.datepick.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/uploadfile.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/fontawesome-all.min.css" >'." \r\n  ";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/slide-menu.css" >'."\r\n";
+        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/table-header.css" >'."\r\n";
+        $html_str .= "    </head>";
         return $html_str;
     }
 
-    private static function createIndexfile($path){
+    private static function createIndexfile($path, $db){
         $head = self::getheaders();
         $script = self::getscripts();
-        $ibody = "\r\n".' <body onload="loadHtmlPage('."'".'menu.html'."', '".'sidemenu'."'".');">';
+        $ibody = "\r\n".' <body onload="loadHtmlPage('."'".'menu.html'."', '".'sidemenu'."'".');" >';
         $ibody .= "\r\n".'  <div class="container-fluid" style="padding:0; margin:0; top:0; left:0;">';
         $ibody .= "\r\n".'      <div class="row">';
         $ibody .= "\r\n".'       <div id="sidemenu" class="col-xl-3 col-lg-3 col-md-3 d-lg-inline d-md-inline d-sm-none d-none">';
-        $ibody .= "\r\n".'        </div><div class="col-xl-9 col-lg-9 col-md-9 col-sm-12 col-xs-12"><div id="displaywin">General display</div></div>'."\r\n";
+        $ibody .= "\r\n".'        </div><div class="col-xl-9 col-lg-9 col-md-9 col-sm-12 col-xs-12"><div id="displaywin"></div></div>'."\r\n";
         $ibody .= '        </div></div>';
         $ibody_close ="\r\n".'  </body>'."\r\n".' </html>';
         $bcontent = $head.$ibody.$script.$ibody_close;
@@ -357,6 +357,8 @@ class appmaker
         $lheaders .= '        <link rel="stylesheet" href="assets/css/jquery.datepick.css" >'."\r\n";
         $lheaders .= '        <link rel="stylesheet" href="assets/css/uploadfile.css" >'."\r\n";
         $lheaders .= '        <link rel="stylesheet" href="assets/css/fontawesome-all.min.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/custom/slide-menu.css" >'."\r\n";
+        $lheaders .= '        <link rel="stylesheet" href="assets/css/custom/table-header.css" >'."\r\n";
         $lheaders .= "      </head>";
         return $lheaders;
     }
@@ -457,9 +459,24 @@ class appmaker
                 $kount += 1;
             }
         }
-        $html_tb = '<div class="container-fluid">';
+        $html_tb = '<div ng-app="'.$tbl.'View" ng-controller="'.$tbl.'Ctrl" class="container-fluid">';
+        $html_tb .='<div class="row">'."\r\n    ".'<div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-12">';
+        $html_tb .='        <span class="alert alert-danger">{{ berror }}</span>'."\r\n";
+        $html_tb .='    </div>'."\r\n";
+        $html_tb .='    <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-12">'."\r\n";
+        $html_tb .='        <ul class="menu">'."\r\n";
+        $html_tb .='           <li class="rootmenu"><a href="#">Export</a>'."\r\n";
+        $html_tb .='                <ul id="menu_list">'."\r\n";
+        $html_tb .='                    <li><a href="#">Excel</a></li>'."\r\n";
+        $html_tb .='                    <li><a href="#">CSV</a></li>'."\r\n";
+        $html_tb .='                    <li><a href="#">Pdf</a></li>'."\r\n";
+        $html_tb .='                    <li><a href="#">Text</a></li>'."\r\n";
+        $html_tb .='                    <li><a href="#">Word</a></li>'."\r\n";
+        $html_tb .='                </ul>'."\r\n".'        </li>'."\r\n";
+        $html_tb .='           <li class="rootmenu"><a href="#">+ | Add New</a></li>'."\r\n";
+        $html_tb .='            </ul>'."\r\n".'        </div>'."\r\n".'</div>';
         $html_tb .= "\r\n  ".'<table class="table-striped">';
-        $html_tb .= "\r\n    ".'<tr class="noborder">';
+        /*$html_tb .= "\r\n    ".'<tr class="noborder">';
         $html_tb .= '<td colspan="3"><button class="btn btn-primary">';
         $html_tb .= 'Export</button></td>';
         if ( sizeof($tbr) > 5 ){
@@ -468,16 +485,16 @@ class appmaker
             $html_tb .='">&nbsp;</td>';
         }
         $html_tb .= '<td colspan="3" align="right"><button onclick="loadHtmlPage('."'{$tbl}/new.html','displaywin'".');" class="btn btn-primary">&nbsp;+&nbsp;';
-        $html_tb .= '|&nbsp;Add New</button></td></tr>';
-        $html_tb .= '<tr>';
+        $html_tb .= '|&nbsp;Add New</button></td></tr>';*/
+        $html_tb .= '    <thead>'."\r\n".'        <tr>';
         for($i=0; $i<sizeof($tbr); $i++){
-            $html_tb .= '<td>'.strtoupper(str_replace("_"," ",$tbr[$i]['Field'])).'</td>';
+            $html_tb .= '<th>'.strtoupper(str_replace("_"," ",$tbr[$i]['Field'])).'</th>';
         }
-        $html_tb .= '<td>&nbsp;</td>';
+        $html_tb .= '<th>&nbsp;</th>';
         $html_tb .= "\r\n    ".'</tr>';
-        $html_tb .= '<tr ngFor="@'.$tbl.'">';
+        $html_tb .= '<tr ng-repeat="x in '.$tbl.'.'.str_replace("s", "", $tbl).'">';
         for ($t=0; $t<sizeof($tbr); $t++){
-            $html_tb .= '<td>@'.$tbl.".".$tbr[$t]['Field'].'</td>';
+            $html_tb .= '<td>{{x.'.$tbr[$t]['Field'].'}}</td>';
         }
         $html_tb .= '<td align="center">&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/edit.html','displaywin'".');" class="fas fa-edit"></i>';
         $html_tb .= '&nbsp;&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/show.html','displaywin'".');" class="fas fa-eye"></i>';
@@ -919,9 +936,9 @@ class appmaker
         $jdb = self::dataObj();
         $jtb = $tb["Tables_in_".$jdb->dbname];
         $jstr ="//javascript file for ".$jtb." using angularjs for data-binding.\r\n";
-        $jstr .='let base_api_url = "http://localhost:8085/'.$jdb->dbname.'/api/";'."\r\n";
-        $jstr .='let user = local_store({}, "'.str_replace("db", "",$jdb->dbname).'-user", "get");'."\r\n";
-        $jstr .="let app = angular.module('".$jtb."View', []);\r\n\r\n";
+        $jstr .='var base_api_url = "http://localhost:8085/'.$jdb->dbname.'/api/";'."\r\n";
+        $jstr .='var user = local_store({}, "'.str_replace("db", "",$jdb->dbname).'-user", "get");'."\r\n";
+        $jstr .="var app = angular.module('".$jtb."View', []);\r\n\r\n";
         $jstr .='app.controller ('."'".$jtb."Ctrl'".', function($scope, $http) {'."\r\n\r\n";
         $jstr .='    this.'.str_replace("s", "",$jtb).' = {user:user, ';
         $jstr .= self::get_tab_string($tb);

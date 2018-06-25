@@ -18,13 +18,10 @@ class appmaker
         }
         $tbs = self::getTables();
         self::makeform($tbs);
-        self::makereport($tbs, self::$fmts);
         self::create_class($tbs);
         self::create_http_api($tbs);
         self::create_javascript($tbs);
-
-        //self::makemodel($tbs);
-        //self::makecontroller($tbs);
+        //self::writeconfigfile(self::$db_config);
     }
 
     private static function getTables(){
@@ -66,6 +63,16 @@ class appmaker
         return $db;
     }
 
+    private static function writeconfigfile($conf){
+        $fcon = '<?php '."\r\n//Database settings/configuration file.\r\n";
+        $fcon .='    $db = new DbHandlers();'."\r\n\r\n";
+        $fcon .= '    $db->servername = "'.$conf['host'].'";'."\r\n\r\n";
+        $fcon .= '    $db->username = "'.$conf['user'].'";'."\r\n\r\n";
+        $fcon .= '    $db->password = "'.$conf['password'].'";'."\r\n\r\n";
+        $fcon .= '    $db->dbname = "'.$conf['db'].'";'."\r\n";
+        self::writetofile($fcon, self::$base_dir."/server/", "dbconfig", "php");
+    }
+
     private static function table_structure($tb, $dbo){
         $tbl = $tb["Tables_in_".$dbo->dbname];
         $table_properties = $dbo->tableDesc($tbl);
@@ -96,7 +103,7 @@ class appmaker
                 self::create_form($table);
             }
         }
-        self::createIndexfile(self::$base_dir."/app/views", $db->dbname);
+        //self::createIndexfile(self::$base_dir."/app/views", $db->dbname);
         self::createLandingPage(self::$base_dir."/");
         self::generatemenu($tbs);
     }
@@ -136,17 +143,17 @@ class appmaker
         $signup .= "\r\n      ".'<form method="post" enctype="multipart/form-data">';
         $signup .= "\r\n        ".'<div class="form-group">';
         $signup .= "\r\n          ".'<label for="fullname">Full Name</label>';
-        $signup .= "\r\n          ".'<input class="form-control" name="fullname" type="text" ngModel="user.fullname" required>';
+        $signup .= "\r\n          ".'<input class="form-control" name="fullname" type="text" ng-model="user.fullname" required>';
         $signup .= "\r\n          ".'<small>Please Enter your full name with surname first.</small>';
         $signup .= "\r\n        ".'</div>';
         $signup .= "\r\n        ".'<div class="form-group">';
         $signup .= "\r\n          ".'<label for="email">E-mail</label>';
-        $signup .= "\r\n          ".'<input class="form-control" name="email" type="email" ngModel="user.email" required>';
+        $signup .= "\r\n          ".'<input class="form-control" name="email" type="email" ng-model="user.email" required>';
         $signup .= "\r\n          ".'<small>Please Enter your email.</small>';
         $signup .= "\r\n        ".'</div>';
         $signup .= "\r\n        ".'<div class="form-group">';
         $signup .= "\r\n          ".'<label for="password">Choose Password</label>';
-        $signup .= "\r\n          ".'<input class="form-control" name="password" type="password" ngModel="user.password" required>';
+        $signup .= "\r\n          ".'<input class="form-control" name="password" type="password" ng-model="user.password" required>';
         $signup .= "\r\n          ".'<small>Choose a strong but easy to remember password.</small>';
         $signup .= "\r\n        ".'</div>';
         $signup .= "\r\n        ".'<div class="form-group">';
@@ -169,12 +176,12 @@ class appmaker
         $signin .= "\r\n  ".'<form method="post" enctype="multipart/form-data">';
         $signin .= "\r\n    ".'<div class="form-group">';
         $signin .= "\r\n      ".'<label for="username">Username / E-mail</label>';
-        $signin .= "\r\n      ".'<input class="form-control" name="username" type="text" ngModel="user.username" required>';
+        $signin .= "\r\n      ".'<input class="form-control" name="username" type="text" ng-model="user.username" required>';
         $signin .= "\r\n      ".'<small>Please your username or e-mail.</small>';
         $signin .= "\r\n    ".'</div>';
         $signin .= "\r\n    ".'<div class="form-group">';
         $signin .= "\r\n      ".'<label for="password">Password</label>';
-        $signin .= "\r\n      ".'<input class="form-control" name="password" type="password" ngModel="user.password" required>';
+        $signin .= "\r\n      ".'<input class="form-control" name="password" type="password" ng-model="user.password" required>';
         $signin .= "\r\n      ".'<small>Enter your password.</small>';
         $signin .= "\r\n    ".'</div>';
         $signin .= "\r\n    ".'<button type="submit" class="btn btn-primary">&nbsp;Sign In&nbsp;</button>';
@@ -193,13 +200,55 @@ class appmaker
         }
 
         $header = self::getheaders();
+        $scripts = self::getscripts($file);
+        $bopen = self::getbodyopen($file);
+        $bclos = self::getbodyclose($file);
         $body = self::dohtmlbody($tbpro, $file);
-        $scripts = self::getscripts();
-        $close_form = "\r\n     ".'<button type="submit" class="btn btn-primary">Submit</button>'."\r\n    </form>\r\n   </div>";
-        $close_body = "\r\n  </body> \r\n </html>";
-        $html = $header.$body.$close_form.$scripts.$close_body;
-        self::writetofile($html, $d_file, "edit", "html");
-        self::create_form_new($tbpro, $d_file);
+        $html = $header.$bopen.$body.$bclos.$scripts;
+        $html .= '    </body>'."\r\n".'</html>';
+        self::writetofile($html, $d_file, "index", "html");
+        //self::create_form_new($tbpro, $d_file);
+    }
+
+    private static function getbodyclose($tbc){
+        $clbo = '                    </div>'."\r\n";
+        $clbo .= '                </div>'."\r\n";
+        $clbo .= '            </div>'."\r\n";
+        $clbo .='        </div>'."\r\n";
+        $clbo .= '    </div>';
+        return $clbo;
+    }
+
+    private static function getbodyopen($tbo){
+        $opbody = '    <body onload="loadHtmlPage(\'../menu.html\', \'sidemenu\');toggle_display(\'dview\');">'."\r\n";
+        $opbody .= '        <div class="container-fluid" style="padding:0; margin:0; top:0; left:0;">'." \r\n";
+        $opbody .= '            <div ng-app="'.$tbo.'View" ng-controller="'.$tbo.'Ctrl" class="row">'."\r\n";
+        $opbody .= '                <div id="sidemenu" class="col-xl-3 col-lg-3 col-md-3 d-lg-inline d-md-inline d-sm-none d-none"></div>'."\r\n";
+        $opbody .= '                <div class="col-xl-9 col-lg-9 col-md-9 col-sm-12 col-xs-12">'."\r\n";
+        $opbody .= '                    <div class="row">'."\r\n";
+        $opbody .= '                        <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">'."\r\n";
+        $opbody .= '                            <span class="alert alert-danger">{{ berror }}</span>'."\r\n";
+        $opbody .= '                        </div>'."\r\n";
+        $opbody .= '                        <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">'."\r\n";
+        $opbody .= '                            <ul class="menu">'."\r\n";
+        $opbody .= '                                <li onclick="toggle_display(\'dview\');" class="rootmenu"><i class="fas fa-home" aria-hidden="true"></i><a href="#"> Home</a></li>'."\r\n";
+        $opbody .= '                                <li class="rootmenu"><i class="fas fa-print" aria-hidden="true"></i><a href="#"> Print</a></li>'."\r\n";
+        $opbody .= '                                <li class="rootmenu"><i class="fas fa-cloud-download-alt"></i><a href="#"> Export</a>'."\r\n";
+        $opbody .= '                                    <ul id="menu_list">'."\r\n";
+        $opbody .= '                                        <li><i class="fas fa-file-excel" aria-hidden="true"></i><a href="#">  Excel</a></li>'."\r\n";
+        $opbody .= '                                        <li><i class="fas fa-file-alt" aria-hidden="true"></i><a href="#">  CSV</a></li>'."\r\n";
+        $opbody .= '                                        <li><i class="fas fa-file-pdf" aria-hidden="true"></i><a href="#">  Pdf</a></li>'."\r\n";
+        $opbody .= '                                        <li><i class="fas fa-file-alt" aria-hidden="true"></i><a href="#">  Text</a></li>'."\r\n";
+        $opbody .= '                                        <li><i class="fas fa-file-word" aria-hidden="true"></i><a href="#">  Word</a></li>'."\r\n";
+        $opbody .= '                                    </ul>'."\r\n";
+        $opbody .= '                                </li>'."\r\n";
+        $opbody .= '                                <li onclick="toggle_display(\'dnew\');" class="rootmenu"><i class="fas fa-copy" aria-hidden="true"></i><a href="#"> Add New</a></li>'."\r\n";
+        $opbody .= '                            </ul>'."\r\n";
+        $opbody .= '                        </div>'."\r\n";
+        $opbody .= '                    </div>'."\r\n";
+        $opbody .= '                <div class="row">'."\r\n";
+        $opbody .= '                    <div>'."\r\n";
+        return $opbody;
     }
 
     private static function create_form_new($tab, $formdir){
@@ -260,7 +309,7 @@ class appmaker
     private static function doGenderSelect($field, $file){
         $dselect = "\r\n     ".'<div class="form-group">';
         $dselect .= "\r\n       ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $dselect .= "\r\n       ".'<select class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'">';
+        $dselect .= "\r\n       ".'<select class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "",$file).".".$field.'">';
         $dselect .= "\r\n         ".'<option value="Male">Male</option>';
         $dselect .= "\r\n         ".'<option value="Female">Female</option>';
         $dselect .= "\r\n       ".'</select>';
@@ -269,8 +318,8 @@ class appmaker
     }
 
     private static function dohtmlbody($prop, $file){
-        $html_body = "\r\n  <body> \r\n   ".'<div class="container">'." \r\n   ";
-        $html_body .= ' <form  method="post" enctype="multipart/form-data">';
+        $html_body = '            <div class="display" id="dnew">'."\r\n";
+        $html_body .= '                <form name="frm'.ucwords(str_replace("s", "", $file)).'"  method="post" enctype="multipart/form-data">';
         for ($l=0; $l<sizeof($prop); $l++) {
             $type_size = self::getFieldType($prop[$l]['Type']);
             $type = self::getControlType($prop[$l]['Field'], $type_size);
@@ -284,13 +333,15 @@ class appmaker
                 $html_body .= self::doTextarea($prop[$l]['Field'], $file);
             } else {}
         }
+        $html_body .= "\r\n".'<button ng-click="'.str_replace("s", "", $file).'_save();" type="button" class="btn btn-primary">&nbsp;SAVE&nbsp;</button>'."\r\n";
+        $html_body .= "</form>\r\n</div>";
         return $html_body;
     }
 
     private static function doControlField($field, $file, $type){
         $html_control = "\r\n     ".'<div class="form-group">';
         $html_control .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $html_control .= "\r\n      ".'<input type="'.$type.'" class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'" placeholder="Enter '.$field.'" />';
+        $html_control .= "\r\n      ".'<input type="'.$type.'" class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "", $file).".".$field.'" placeholder="Enter '.$field.'" />';
         $html_control .= "\r\n     </div>";
         return $html_control;
     }
@@ -298,23 +349,23 @@ class appmaker
     private static function doTextarea($field, $file){
         $dtexta = "\r\n     ".'<div class="form-group">';
         $dtexta .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $dtexta .= "\r\n      ".'<textarea class="form-control" name="'.$field.'" ngModel="'.$file.".".$field.'">Enter '.$field.'</textarea>';
+        $dtexta .= "\r\n      ".'<textarea class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "", $file).".".$field.'">Enter '.$field.'</textarea>';
         $dtexta .= "\r\n     </div>";
         return $dtexta;
     }
 
-    private static function getscripts(){
-        $html_body = "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/popper.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/bootstrap.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/angular.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery-ui.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.datepick.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.table2excel.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/jquery.uploadfile.min.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/utility.js"></script>';
-        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../assets/js/autocomplete.js"></script>';
-
+    private static function getscripts($tbi){
+        $html_body = "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/jquery.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/popper.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/bootstrap.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/angular.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/jquery-ui.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/jquery.datepick.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/jquery.table2excel.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/jquery.uploadfile.min.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/utility.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/js/autocomplete.js"></script>';
+        $html_body .= "\r\n    ".'<script language="javascript" type="text/javascript" src="../../../assets/src/'.$tbi.'.js"></script>';
         return $html_body;
     }
 
@@ -323,13 +374,14 @@ class appmaker
         $html_str .= "    <head> \r\n   ";
         $html_str .= '        <meta content="text/html" charset="utf-8" >'." \r\n   ";
         $html_str .= '        <meta name="viewport" content="width=device-width, initial-scale=1">'." \r\n   ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" >'." \r\n   ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/jquery-ui.css" >'." \r\n   ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/jquery.datepick.css" >'." \r\n   ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/uploadfile.css" >'." \r\n   ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/fontawesome-all.min.css" >'." \r\n  ";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/slide-menu.css" >'."\r\n";
-        $html_str .= '        <link rel="stylesheet" href="../../assets/css/custom/table-header.css" >'."\r\n";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/bootstrap.min.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/jquery-ui.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/jquery.datepick.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/custom/uploadfile.css" >'." \r\n   ";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/fontawesome-all.min.css" >'." \r\n  ";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/custom/slide-menu.css" >'."\r\n";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/custom/table-header.css" >'."\r\n";
+        $html_str .= '        <link rel="stylesheet" href="../../../assets/css/custom/view.css" >'."\r\n";
         $html_str .= "    </head>";
         return $html_str;
     }
@@ -405,11 +457,15 @@ class appmaker
             mkdir(self::$base_dir.'/assets/js', 0777, true);
             mkdir(self::$base_dir.'/assets/webfonts', 0777, true);
             mkdir(self::$base_dir.'/assets/ckeditor', 0777, true);
+            mkdir(self::$base_dir.'/api/error', 0777, true);
+            mkdir(self::$base_dir.'/server', 0777, true);
         }
         self::xcopy('css/', self::$base_dir.'/assets/css');
         self::xcopy('js/', self::$base_dir.'/assets/js');
         self::xcopy('webfonts/', self::$base_dir.'/assets/webfonts');
         self::xcopy('ckeditor/', self::$base_dir.'/assets/ckeditor');
+        self::xcopy('server/', self::$base_dir.'/server');
+        self::xcopy('server/error', self::$base_dir.'/api/error');
     }
 
     private static function xcopy($src, $dest) {
@@ -533,7 +589,9 @@ class appmaker
         } else {
             $nclass = $table["Tables_in_".$dbo->dbname];
         }
+
         $defc = 'require "DbHandlers.php";'."\r\n\r\n";
+        //$defc .= 'require "dbconfig.php";'."\r\n\r\n";
         $defc .= 'class '.ucwords($nclass).'{'."\r\n\r\n";
         $tprop = self::table_structure($table, $dbo);
         $defc .= '    /** Object(class) properties.*/'."\r\n";

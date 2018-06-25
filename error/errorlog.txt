@@ -1,0 +1,4 @@
+Error on line 41 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ 

@@ -3,10 +3,10 @@
 class DbHandlers
 {
     //PROPERTIES
-    public $servername; //= "localhost";
-    public $username; //= "root";
-    public $password; //= "Adisababa2$";
-    public $dbname; //= "dbhandlers";
+    public $servername = 'localhost';
+    public $username = 'root';
+    public $password = 'aherceo2$';
+    public $dbname = 'educaredb';
     private $conn;
 
     public $tableName = '';

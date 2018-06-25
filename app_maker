@@ -90,11 +90,14 @@ class appmaker
     }
 
     private static function makeform($tbs){
+        $db = self::dataObj();
         foreach ($tbs as $table){
             if (self::exempted($table) === false){
                 self::create_form($table);
             }
         }
+        self::createIndexfile(self::$base_dir."/app/views", $db->dbname);
+        self::createLandingPage(self::$base_dir."/");
         self::generatemenu($tbs);
     }
 
@@ -121,8 +124,6 @@ class appmaker
         self::$base_dir = "../".$db->dbname;
         $fdir = self::$base_dir."/app/views/".$tbl."/";
         self::parse_html_form($tabprop, $tbl, $fdir);
-        self::createIndexfile(self::$base_dir."/app/views", $db->dbname);
-        self::createLandingPage(self::$base_dir."/");
         if ($tbl == "users") {
             self::createSignUp($tabprop);
             self::createSignIn($tabprop);

@@ -206,7 +206,16 @@ class appmaker
         $body = self::dohtmlbody($tbpro, $file["Tables_in_".$dbf->dbname]);
         $body .= '<div class="display" id="dview">';
         $body .= self::do_html_table_report($file);
-        $body .= '</div>';
+        $body .= "\r\n".'</div>'."\r\n";
+        $body .= '    <div class="display" id="dsview">'."\r\n";
+        $body .= '        <table>'."\r\n";
+        foreach ($tbpro as $col){
+            $body .= '            <tr><td align="right"><b>'.$col["Field"].':</b></td><td align="left">';
+            $body .= "&nbsp;".'{{'.str_replace("s", "", $file["Tables_in_".$dbf->dbname]).'.';
+            $body .= $col["Field"].'}}</td></tr>'."\r\n";
+        }
+        $body .= '        </table>'."\r\n";
+        $body .= '    </div>'."\r\n";
         $html = $header.$bopen.$body.$bclos.$scripts;
         $html .= '    </body>'."\r\n".'</html>';
         self::writetofile($html, $d_file, "index", "html");
@@ -533,19 +542,10 @@ class appmaker
         for ($t=0; $t<sizeof($tbr); $t++){
             $html_tb .= '<td>{{x.'.$tbr[$t]['Field'].'}}</td>';
         }
-
-
-
         $html_tb .= '<td align="center">&nbsp;';
         $html_tb .= '<i onclick="toggle_display(\'dnew\');" ng-click="do_'.str_replace("s", "", $tbl).'_update(\'id\', x.id);" class="fas fa-edit"></i>&nbsp;&nbsp;';
         $html_tb .= '<i onclick="toggle_display(\'dsview\');" ng-click="'.str_replace("s", "", $tbl).'_view_single(\'bank_code\', x.bank_code);" class="fas fa-eye"></i>&nbsp;&nbsp;';
         $html_tb .= '<i ng-click="'.str_replace("s", "", $tbl).'_delete(\''.str_replace("s", "", $tbl).'_code\', x.'.str_replace("s", "", $tbl).'_code);" class="fas fa-trash"></i></td>&nbsp;';
-
-
-        //$html_tb .= '<td align="center">&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/edit.html','displaywin'".');" class="fas fa-edit"></i>';
-        //$html_tb .= '&nbsp;&nbsp;<i onclick="loadHtmlPage('."'".$tbl."/show.html','displaywin'".');" class="fas fa-eye"></i>';
-        //$html_tb .= '&nbsp;&nbsp;<i onclick="deleteData('."'".$tbl."','@".$tbl."."."id'".');" class="fas fa-trash"></i></td>&nbsp;';
-        $html_tb .= '</tr>';
         $html_tb .= "\r\n  ".'</table>';
         //self::writetofile($html_tb, self::$base_dir."/app/views/".$tbl."/", "index", "html");
         return $html_tb;

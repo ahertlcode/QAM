@@ -2,5 +2,12 @@ table thead tr th{
     text-align: center;
     vertical-align: middle;
     font-weight: bolder;
-    font-size:110%;
+    font-size:80%;
+    font-family:Arial, Helvetica, sans-serif;
+}
+table tr td{
+    vertical-align: middle;
+    font-weight: light;
+    font-size:70%;
+    font-family:"Times New Roman", Times, serif;
 }

@@ -111,7 +111,7 @@ class appmaker
     private static function generatemenu($tables){
         $menustr = '<nav class="navbar bg-dark navbar-dark">';
         $menustr .= "\r\n  ".'<ul class="navbar-nav">';
-        $menustr .= '<h1>'.str_replace("db","",ucwords(self::$db_config["db"])).'<sup>&reg;</sup></h1>';
+        $menustr .= '<h1>'.str_replace("db", "", ucwords(self::$db_config["db"])).'<sup>&reg;</sup></h1>';
         foreach ($tables as $tb){
             if (self::exempted($tb) === false){
                 $menustr .= "\r\n    ".'<li class="nav-item">';
@@ -211,7 +211,13 @@ class appmaker
         $body .= '        <table>'."\r\n";
         foreach ($tbpro as $col){
             $body .= '            <tr><td align="right"><b>'.$col["Field"].':</b></td><td align="left">';
-            $body .= "&nbsp;".'{{'.str_replace("s", "", $file["Tables_in_".$dbf->dbname]).'.';
+            $htab = "";
+            $htab1 = $file["Tables_in_".$dbf->dbname];
+            if ($htab1[strlen($htab1)-1] == "s")
+                $htab = substr($htab1, 0, strlen($htab1)-1);
+            else
+                $htab = $htab1;
+            $body .= "&nbsp;".'{{'.$htab.'.';
             $body .= $col["Field"].'}}</td></tr>'."\r\n";
         }
         $body .= '        </table>'."\r\n";
@@ -321,7 +327,12 @@ class appmaker
     private static function doGenderSelect($field, $file){
         $dselect = "\r\n     ".'<div class="form-group">';
         $dselect .= "\r\n       ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $dselect .= "\r\n       ".'<select class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "",$file).".".$field.'">';
+        $stab = "";
+        if ($file[strlen($file)-1] == "s")
+            $stab = substr($file, 0, strlen($file)-1);
+        else
+            $stab = $file;
+        $dselect .= "\r\n       ".'<select class="form-control" name="'.$field.'" ng-model="'.$stab.".".$field.'">';
         $dselect .= "\r\n         ".'<option value="Male">Male</option>';
         $dselect .= "\r\n         ".'<option value="Female">Female</option>';
         $dselect .= "\r\n       ".'</select>';
@@ -331,7 +342,12 @@ class appmaker
 
     private static function dohtmlbody($prop, $file){
         $html_body = '            <div class="display" id="dnew">'."\r\n";
-        $html_body .= '                <form name="frm'.ucwords(str_replace("s", "", $file)).'"  method="post" enctype="multipart/form-data">'."\r\n";
+        $btab = "";
+        if($file[strlen($file)-1] == "s")
+            $btab = substr($file, 0, strlen($file)-1);
+        else
+            $btab = $file;
+        $html_body .= '                <form name="frm'.ucwords($btab).'"  method="post" enctype="multipart/form-data">'."\r\n";
         $html_body .= '                    <input #colname type="hidden" name="colname" ng-model="update.col_name" />'."\r\n";
         $html_body .= '                    <input #colvalue type="hidden" name="colvalue" ng-model="update.col_value" />'."\r\n";
         for ($l=0; $l<sizeof($prop); $l++) {
@@ -347,7 +363,12 @@ class appmaker
                 $html_body .= self::doTextarea($prop[$l]['Field'], $file);
             } else {}
         }
-        $html_body .= "\r\n".'<button ng-click="'.str_replace("s", "", $file).'_save();" type="button" class="btn btn-primary">&nbsp;SAVE&nbsp;</button>'."\r\n";
+        $hbtab = "";
+        if ($file[strlen($file)-1] == "s")
+            $hbtab = substr($file, 0, strlen($file)-1);
+        else
+            $hbtab = $file;
+        $html_body .= "\r\n".'<button ng-click="'.$hbtab.'_save();" type="button" class="btn btn-primary">&nbsp;SAVE&nbsp;</button>'."\r\n";
         $html_body .= "</form>\r\n</div>";
         return $html_body;
     }
@@ -355,7 +376,12 @@ class appmaker
     private static function doControlField($field, $file, $type){
         $html_control = "\r\n     ".'<div class="form-group">';
         $html_control .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $html_control .= "\r\n      ".'<input type="'.$type.'" class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "", $file).".".$field.'" placeholder="Enter '.$field.'" />';
+        $dftab = "";
+        if ($file[strlen($file)-1] == "s")
+            $dftab = substr($file, 0, strlen($file)-1);
+        else
+            $dftab = $file;
+        $html_control .= "\r\n      ".'<input type="'.$type.'" class="form-control" name="'.$field.'" ng-model="'.$dftab.".".$field.'" placeholder="Enter '.$field.'" />';
         $html_control .= "\r\n     </div>";
         return $html_control;
     }
@@ -363,7 +389,12 @@ class appmaker
     private static function doTextarea($field, $file){
         $dtexta = "\r\n     ".'<div class="form-group">';
         $dtexta .= "\r\n      ".'<label for="'.$field.'">'.ucwords(str_replace("_"," ",$field)).'</label>';
-        $dtexta .= "\r\n      ".'<textarea class="form-control" name="'.$field.'" ng-model="'.str_replace("s", "", $file).".".$field.'">Enter '.$field.'</textarea>';
+        $dtaba = "";
+        if ($file[strlen($file)-1] == "s")
+            $dtaba = substr($file, 0, strlen($file)-1);
+        else
+            $dtaba = $file;
+        $dtexta .= "\r\n      ".'<textarea class="form-control" name="'.$field.'" ng-model="'.$dtaba.".".$field.'">Enter '.$field.'</textarea>';
         $dtexta .= "\r\n     </div>";
         return $dtexta;
     }
@@ -530,23 +561,30 @@ class appmaker
                 $kount += 1;
             }
         }
-        $html_tb = "\r\n  ".'<table class="table-striped">';
+        $html_tb = "\r\n  ".'<table class="table table-hover table-dark table-bordered">';
         $html_tb .= '    <thead>'."\r\n".'        <tr><th>S/N</th>';
         for($i=0; $i<sizeof($tbr); $i++){
-            $html_tb .= '<th>'.strtoupper(str_replace("_"," ",$tbr[$i]['Field'])).'</th>';
+            if (strtoupper($tbr[$i]['Field'])!== "PASSWORD")
+                $html_tb .= '<th>'.strtoupper(str_replace("_"," ",$tbr[$i]['Field'])).'</th>';
         }
         $html_tb .= '<th>&nbsp;</th>';
-        $html_tb .= "\r\n    ".'</tr>';
-        $html_tb .= '<tr ng-repeat="x in '.$tbl.'.'.str_replace("s", "", $tbl).'">';
+        $html_tb .= "\r\n    ".'</tr></thead><tbody>';
+        $atab = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $atab = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $atab = $tbl;
+        $html_tb .= '<tr ng-repeat="x in '.$tbl.'.'.$atab.'">';
         $html_tb .= '<td>{{$index + 1}}</td>';
         for ($t=0; $t<sizeof($tbr); $t++){
-            $html_tb .= '<td>{{x.'.$tbr[$t]['Field'].'}}</td>';
+            if (strtoupper($tbr[$t]['Field'])!== "PASSWORD")
+                $html_tb .= '<td>{{x.'.$tbr[$t]['Field'].'}}</td>';
         }
         $html_tb .= '<td align="center">&nbsp;';
-        $html_tb .= '<i onclick="toggle_display(\'dnew\');" ng-click="do_'.str_replace("s", "", $tbl).'_update(\'id\', x.id);" class="fas fa-edit"></i>&nbsp;&nbsp;';
-        $html_tb .= '<i onclick="toggle_display(\'dsview\');" ng-click="'.str_replace("s", "", $tbl).'_view_single(\'bank_code\', x.bank_code);" class="fas fa-eye"></i>&nbsp;&nbsp;';
-        $html_tb .= '<i ng-click="'.str_replace("s", "", $tbl).'_delete(\''.str_replace("s", "", $tbl).'_code\', x.'.str_replace("s", "", $tbl).'_code);" class="fas fa-trash"></i></td>&nbsp;';
-        $html_tb .= "\r\n  ".'</table>';
+        $html_tb .= '<i onclick="toggle_display(\'dnew\');" ng-click="do_'.$atab.'_update(\'id\', x.id);" class="fas fa-edit"></i>&nbsp;&nbsp;';
+        $html_tb .= '<i onclick="toggle_display(\'dsview\');" ng-click="'.$atab.'_view_single(\'id\', x.id);" class="fas fa-eye"></i>&nbsp;&nbsp;';
+        $html_tb .= '<i ng-click="'.$atab.'_delete(\'id\', x.id);" class="fas fa-trash"></i></td>&nbsp;';
+        $html_tb .= "\r\n  ".'</tbody>'."\r\n".'</table>';
         //self::writetofile($html_tb, self::$base_dir."/app/views/".$tbl."/", "index", "html");
         return $html_tb;
     }
@@ -760,8 +798,7 @@ class appmaker
         $datastr .="    //strip the trailing 's' character from the table ";
         $datastr .="name to created the model reference name.\r\n";
         $datastr .='    if($data->table[strlen($data->table)-1] == "s"){'."\r\n";
-        $datastr .='        $obj = str_replace($data->table';
-        $datastr .='[strlen($data->table)-1], "",$data->table);'."\r\n";
+        $datastr .='        $obj = substr($data->table, 0, strlen($data->table)-1);'."\r\n";
         $datastr .="    } else {\r\n";
         $datastr .='        $obj = $data->table;'."\r\n}\r\n\r\n";
         $datastr .="//capitalize the first character of the class name.\r\n";
@@ -897,7 +934,11 @@ class appmaker
     }
 
     private static function get_js_save_method($tbs){
-        $tb = str_replace("s", "", $tbs);
+        $tb = "";
+        if ($tbs[strlen($tbs)-1] == "s")
+            $tb = substr($tbs, 0, strlen($tbs)-1);
+        else
+            $tb = $tbs;
         $jsave = '    $scope.'.$tb.'_save = function() {'."\r\n";
         $jsave .='        if (this.update == undefined) {'."\r\n";
         $jsave .='            var pb = {"method":"save", "table":"'.$tbs.'", "data":this.'.$tb.'};'."\r\n";
@@ -911,7 +952,11 @@ class appmaker
     }
 
     private static function get_js_view_method($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $jsview = '    $scope.'.$tb.'_view_single = function(coln, colv){'."\r\n";
         $jsview .='        show_selected($scope, $http, coln, colv);'."\r\n";
         $jsview .='    };'."\r\n\r\n";
@@ -919,7 +964,11 @@ class appmaker
     }
 
     private static function get_js_update_method($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $upstr = '    $scope.do_'.$tb.'_update = function(colname, colvalue){'."\r\n";
         $upstr .='        $scope.update = {"col_name":colname, "col_value":colvalue};'."\r\n";
         $upstr .='        show_selected($scope, $http, colname, colvalue);'."\r\n";
@@ -928,7 +977,11 @@ class appmaker
     }
 
     private static function get_js_delete_method($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $delstr = '    $scope.'.$tb.'_delete = function(coln, colv){'."\r\n";
         $delstr .='        delete_'.$tb.'($scope, $http, coln, colv);'."\r\n";
         $delstr .='    };'."\r\n\r\n";
@@ -936,7 +989,11 @@ class appmaker
     }
 
     private static function get_js_main_view($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $mainstr ='    $http({'."\r\n";
         $mainstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
         $mainstr .='        method: "POST",'."\r\n";
@@ -950,7 +1007,11 @@ class appmaker
     }
 
     private static function get_js_save($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $gstr = 'function save_'.$tb.'($scope, $http, pb){'."\r\n";
         $gstr .='    $http({'."\r\n";
         $gstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
@@ -965,7 +1026,11 @@ class appmaker
     }
 
     private static function get_js_view($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $vstr = 'function show_selected($scope, $http, column, value){'."\r\n";
         $vstr .='    $http({'."\r\n";
         $vstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
@@ -983,12 +1048,17 @@ class appmaker
     private static function do_js_file($tb){
         $jdb = self::dataObj();
         $jtb = $tb["Tables_in_".$jdb->dbname];
+        $tbj = "";
+        if ($jtb[strlen($jtb)-1] == "s")
+            $tbj = substr($jtb, 0, strlen($jtb)-1);
+        else
+            $tbj = $jtb;
         $jstr ="//javascript file for ".$jtb." using angularjs for data-binding.\r\n";
         $jstr .='var base_api_url = "http://localhost:8085/'.$jdb->dbname.'/api/";'."\r\n";
         $jstr .='var user = local_store({}, "'.str_replace("db", "",$jdb->dbname).'-user", "get");'."\r\n";
         $jstr .="var app = angular.module('".$jtb."View', []);\r\n\r\n";
         $jstr .='app.controller ('."'".$jtb."Ctrl'".', function($scope, $http) {'."\r\n\r\n";
-        $jstr .='    this.'.str_replace("s", "",$jtb).' = {user:user, ';
+        $jstr .='    this.'.$tbj.' = {user:user, ';
         $jstr .= self::get_tab_string($tb);
         $jstr .='};'."\r\n";
         $jstr .="    this.update = {col_name:'', col_value:''};\r\n\r\n";
@@ -1006,7 +1076,11 @@ class appmaker
     }
 
     private static function get_js_update($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $jstr ='function update_'.$tb.'($scope, $http, pb){'."\r\n";
         $jstr .='    $http({'."\r\n";
         $jstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";
@@ -1021,7 +1095,11 @@ class appmaker
     }
 
     private static function get_js_delete($tbl){
-        $tb = str_replace("s", "", $tbl);
+        $tb = "";
+        if ($tbl[strlen($tbl)-1] == "s")
+            $tb = substr($tbl, 0, strlen($tbl)-1);
+        else
+            $tb = $tbl;
         $dstr = 'function delete_'.$tb.'($scope, $http, column, value){'."\r\n";
         $dstr .='    $http({'."\r\n";
         $dstr .='        url: base_api_url+"'.$tbl.'_http_api.php",'."\r\n";

@@ -621,9 +621,9 @@ class appmaker
         //$defc .= 'require "dbconfig.php";'."\r\n\r\n";
         $defc .= 'class '.ucwords($nclass).'{'."\r\n\r\n";
         $tprop = self::table_structure($table, $dbo);
-        $defc .= '    /** Object(class) properties.*/'."\r\n";
+        $defc .= '    /** '."\r\n".'Object(class) properties.'."\r\n";
         foreach ($tprop as $tbrow) {
-            if ($tbrow['Null'] == "NO"){
+            if ($tbrow['Default'] !== "NULL"){
                 array_push($publ, $tbrow['Field']);
             } else {
                 array_push($priv, $tbrow['Field']);
@@ -637,7 +637,7 @@ class appmaker
     private static function do_public_prop($prop){
         $pub = "";
         if(sizeof($prop)>0){
-            $pub = "    /** Object(class) public properties.*/ \r\n";
+            $pub = "     Object(class) public properties.\r\n"."*/ \r\n";
             foreach($prop as $ppp){
                 $pub .= "    public $".$ppp.";\r\n";
             }
@@ -882,6 +882,8 @@ class appmaker
     private static function get_api_close(){
         $clstr = "//send out put to the stand output.\r\n";
         $clstr .= '$rnd = new renderer();'."\r\n";
+        $clstr .= 'if (sizeof($sout)<2)'."\r\n";
+        $clstr .= '    $sout[0] = $sout;'."\r\n";
         $clstr .= 'echo $rnd->render("json", $sout, "{$obj}, <list></list>");'."\r\n";
         $clstr .= '}'."\r\n";
         return $clstr;

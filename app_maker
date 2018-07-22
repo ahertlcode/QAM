@@ -273,16 +273,17 @@ class appmaker
         $fnew = '<div class="container-fluid">';
         $fnew .= "\r\n  ".'<form method="post" enctype="multipart/form-data">';
         foreach($tab as $tb){
-            if($tb['Null'] == "NO" && $tb['Field'] !== "id" && $tb['Field'] !== "created_at" && $tb['Field'] !== "updated_at" && $tb['Field'] !== "deleted_at"){
+            //if($tb['Null'] == "NO" && $tb['Field'] !== "id" && $tb['Field'] !== "created_at" && $tb['Field'] !== "updated_at" && $tb['Field'] !== "deleted_at"){
+            if($tb['Field'] !== "id" && $tb['Field'] !== "created_at" && $tb['Field'] !== "updated_at" && $tb['Field'] !== "deleted_at"){
                 $type_size = self::getFieldType($tb['Type']);
                 $type = self::getControlType($tb['Field'], $type_size);
-                if ($type_size < 100 && strpos($tb['Field'], "ender")==false){
+                if ($type_size < 200 && strpos($tb['Field'], "ender")==false){
                     $fnew .= self::doControlField($tb['Field'], $formdir, $type);
                 }
                 if(strpos($tb['Field'], "ender")>-1 || strpos($tb['Field'], "sex")>-1){
                 $fnew .= self::doGenderSelect($tb['Field'], $formdir);
             }
-            if ($type_size > 100 || strpos($tb['Type'], "text") >-1) {
+            if ($type_size > 200 || strpos($tb['Type'], "text") >-1) {
                 $fnew .= self::doTextarea($tb['Field'], $formdir);
             } else {}
             }
@@ -353,13 +354,13 @@ class appmaker
         for ($l=0; $l<sizeof($prop); $l++) {
             $type_size = self::getFieldType($prop[$l]['Type']);
             $type = self::getControlType($prop[$l]['Field'], $type_size);
-            if ($prop[$l]['Field'] !== "id" && $type_size < 100  && strpos($prop[$l]['Field'], "ender")==false){
+            if ($prop[$l]['Field'] !== "id" && $type_size < 200  && strpos($prop[$l]['Field'], "ender")==false){
                 $html_body .= self::doControlField($prop[$l]['Field'], $file, $type);
             }
             if(strpos($prop[$l]['Field'], "ender")>-1 || strpos($prop[$l]['Field'], "sex")>-1){
                 $html_body .= self::doGenderSelect($prop[$l]['Field'], $file);
             }
-            if ($type_size > 100 || strpos($prop[$l]['Type'], "text") >-1) {
+            if ($type_size > 200 || strpos($prop[$l]['Type'], "text") >-1) {
                 $html_body .= self::doTextarea($prop[$l]['Field'], $file);
             } else {}
         }
@@ -686,9 +687,23 @@ class appmaker
         foreach($tpr as $fld){
             $savestr.='        if (isset($this->'.$fld['Field']. ') && $this->'.$fld['Field'].'!=="") {'."\r\n";
             if ($tr == 0 ){
-            $savestr.='            $sql.="'."'{".'$this->'.$fld['Field']."}'".'"'.";";
+                if ($fld['Type'] == "date" || $fld['Type'] == "datetime") {
+                    if ($fld['Type'] == "date")
+                        $savestr.='            $sql.="'."'".'".'.'substr($this->'.$fld['Field'].",0,10)".'."'."'".'"'.";";
+                    else
+                        $savestr.='            $sql.="'."'".'".'.'str_replace(".000Z", "", str_replace("T", " ",$this->'.$fld['Field']."))".'."'."'".'"'.";";
+                } else {
+                    $savestr.='            $sql.="'."'{".'$this->'.$fld['Field']."}'".'"'.";";
+                }
             } else {
-                $savestr.='            $sql.="'.",'{".'$this->'.$fld['Field']."}'".'"'.";";
+                if ($fld['Type'] == "date" || $fld['Type'] == "datetime") {
+                    if ($fld['Type'] == "date")
+                        $savestr.='            $sql.="'.",'".'".'.'substr($this->'.$fld['Field'].",0,10)".'."'."'".'"'.";";
+                    else
+                        $savestr.='            $sql.="'.",'".'".'.'str_replace(".000Z", "", str_replace("T", " ", $this->'.$fld['Field']."))".'."'."'".'"'.";";
+                } else {
+                    $savestr.='            $sql.="'.",'{".'$this->'.$fld['Field']."}'".'"'.";";
+                }
             }
             $tr += 1;
             $savestr .="    \r\n        }\r\n";
@@ -712,9 +727,23 @@ class appmaker
         foreach($tpr as $field){
             $updatestr.='        if (isset($this->'.$field['Field'].') && $this->'.$field['Field'].'!=="" ) {'."\r\n";
             if ($itr == 0 ){
-                $updatestr.='             $sql.= " '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+                if ($field['Type'] == "date" || $field['Type'] == "datetime"){
+                    if ($field['Type'] == "date")
+                        $updatestr.='             $sql.= " '.$field['Field'].' = '."'".'".'.'substr($this->'.$field['Field'].", 0, 10)".'."'."'".'"'.";";
+                    else
+                        $updatestr.='             $sql.= " '.$field['Field'].' = '."'".'".'.'str_replace(".000Z", "", str_replace("T", " ", $this->'.$field['Field']."))".'."'."'".'"'.";";
+                } else {
+                    $updatestr.='             $sql.= " '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+                }
             } else {
-                $updatestr.='            $sql.= ", '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+                if ($field['Type'] == "date" || $field['Type'] == "datetime"){
+                    if ($field['Type'] == "date")
+                        $updatestr.='            $sql.= ", '.$field['Field'].' = '."'".'".'.'substr($this->'.$field['Field'].", 0, 10)".'."'."'".'"'.";";
+                    else
+                        $updatestr.='            $sql.= ", '.$field['Field'].' = '."'".'".'.'str_replace(".000Z", "", str_replace("T", " ", $this->'.$field['Field']."))".'."'."'".'"'.";";
+                } else {
+                    $updatestr.='            $sql.= ", '.$field['Field'].' = '."'{".'$this->'.$field['Field']."}'".'"'.";";
+                }
             }
             $itr += 1;
             $updatestr .="    \r\n        }\r\n";

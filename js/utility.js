@@ -182,9 +182,9 @@ function logError(ErrObj) {
     console.log(ErrObj);
 }
 
-function toggle_display(id=null){
+function toggle_display(id=null, act=null){
     hideall();
-    showthis(id);
+    showthis(id, act);
 }
 
 function hideall(){
@@ -192,6 +192,11 @@ function hideall(){
     $(".display").addClass("display-hide");
 }
 
-function showthis(obj){
+function showthis(obj, actn=null){
+    if (actn == "reload") window.location.reload();
     $("#"+obj).addClass("display-show");
+}
+
+function page_reload(){
+    window.location.reload(true);
 }

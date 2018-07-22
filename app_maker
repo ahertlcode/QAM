@@ -249,7 +249,7 @@ class appmaker
         $opbody .= '                        </div>'."\r\n";
         $opbody .= '                        <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-xs-12">'."\r\n";
         $opbody .= '                            <ul class="menu">'."\r\n";
-        $opbody .= '                                <li onclick="toggle_display(\'dview\');" class="rootmenu"><i class="fas fa-home" aria-hidden="true"></i><a href="#"> Home</a></li>'."\r\n";
+        $opbody .= '                                <li onclick="toggle_display(\'dview\',\'reload\');" class="rootmenu"><i class="fas fa-home" aria-hidden="true"></i><a href="#"> Home</a></li>'."\r\n";
         $opbody .= '                                <li class="rootmenu"><i class="fas fa-print" aria-hidden="true"></i><a href="#"> Print</a></li>'."\r\n";
         $opbody .= '                                <li class="rootmenu"><i class="fas fa-cloud-download-alt"></i><a href="#"> Export</a>'."\r\n";
         $opbody .= '                                    <ul id="menu_list">'."\r\n";
@@ -882,8 +882,8 @@ class appmaker
     private static function get_api_close(){
         $clstr = "//send out put to the stand output.\r\n";
         $clstr .= '$rnd = new renderer();'."\r\n";
-        $clstr .= 'if (sizeof($sout)<2)'."\r\n";
-        $clstr .= '    $sout[0] = $sout;'."\r\n";
+        //$clstr .= 'if (sizeof($sout)<2)'."\r\n";
+        //$clstr .= '    $sout[0] = $sout;'."\r\n";
         $clstr .= 'echo $rnd->render("json", $sout, "{$obj}, <list></list>");'."\r\n";
         $clstr .= '}'."\r\n";
         return $clstr;
@@ -945,10 +945,12 @@ class appmaker
         $jsave .='        if (this.update == undefined) {'."\r\n";
         $jsave .='            var pb = {"method":"save", "table":"'.$tbs.'", "data":this.'.$tb.'};'."\r\n";
         $jsave .='            save_'.$tb.'($scope, $http, pb);'."\r\n";
+        //$jsave .='            page_reload();'."\r\n";
         $jsave .='        } else {'."\r\n";
         $jsave .='            var data = Object.assign(this.'.$tb.', this.update);'."\r\n";
         $jsave .='            var pu = {"method":"update", "table":"'.$tbs.'", "data":data};'."\r\n";
         $jsave .='            update_'.$tb.'($scope, $http, pu);'."\r\n";
+        //$jsave .='            page_reload();'."\r\n";
         $jsave .='        }'."\r\n".'    };'."\r\n\r\n";
         return $jsave;
     }

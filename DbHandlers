@@ -4,10 +4,6 @@
 class DbHandlers
 {
     //PROPERTIES
-    /*public $servername = 'localhost';
-    public $username = 'root';
-    public $password = 'aherceo2$';
-    public $dbname = 'educaredb';*/
     private $conn;
 
     public $tableName = '';
@@ -38,6 +34,7 @@ class DbHandlers
     //CONNECTION TO DATABASE
     private function do_conn()
     {
+        global $servername, $dbname, $username, $password;
         try {
             $this->conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

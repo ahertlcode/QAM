@@ -1,5 +1,6 @@
 <?php
 
+
 class utilities{
 
     public static function writetofile($content, $path, $filename, $filetype){

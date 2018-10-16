@@ -1,7 +1,11 @@
 <?php
-include_once "DbHandlers.php";
+
+
+include_once "DbHandlers";
+include_once "dbconfig";
 include_once "api_maker";
 include_once "app_maker";
+include_once "utilities";
 
 if (sizeof($argv)>1){
     //var_dump($argv);
@@ -17,6 +21,6 @@ if (sizeof($argv)>1){
         echo $argv[1]." is not a known maker command";
     }
 } else {
-    echo "You must specify arguments to for the script.";
+    echo "You must specify arguments to the script.";
 }
 ?>

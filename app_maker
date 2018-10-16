@@ -1,5 +1,6 @@
 <?php
 
+
 class appmaker
 {
     static protected $exception;
@@ -70,7 +71,7 @@ class appmaker
         $fcon .= '    $db->username = "'.$conf['user'].'";'."\r\n\r\n";
         $fcon .= '    $db->password = "'.$conf['password'].'";'."\r\n\r\n";
         $fcon .= '    $db->dbname = "'.$conf['db'].'";'."\r\n";
-        self::writetofile($fcon, self::$base_dir."/server/", "dbconfig", "php");
+        utilities::writetofile($fcon, self::$base_dir."/server/", "dbconfig", "php");
     }
 
     private static function table_structure($tb, $dbo){
@@ -121,7 +122,7 @@ class appmaker
             }
         }
         $menustr .= "\r\n  </ul>\r\n</nav>";
-        self::writetofile($menustr, self::$base_dir."/app/views/", "menu", "html");
+        utilities::writetofile($menustr, self::$base_dir."/app/views/", "menu", "html");
     }
 
     private static function create_form($table){
@@ -167,7 +168,7 @@ class appmaker
         $sscripts = self::fscripts();
         $sclose = "\r\n    ".'</body>'."\r\n  ".'</html>';
         $shtml = $sheader.$signup.$sscripts.$sclose;
-        self::writetofile($shtml, self::$base_dir."/", "signup", "html");
+        utilities::writetofile($shtml, self::$base_dir."/", "signup", "html");
     }
 
     private static function createSignIn($prop){
@@ -190,7 +191,7 @@ class appmaker
         $inscripts = self::fscripts();
         $inclose = "\r\n    ".'</body>'."\r\n  ".'</html>';
         $inbody = $inheader.$signin.$inscripts.$inclose;
-        self::writetofile($inbody, self::$base_dir."/", "signin", "html");
+        utilities::writetofile($inbody, self::$base_dir."/", "signin", "html");
     }
 
     private static function parse_html_form($tbpro, $file, $d_file){
@@ -224,7 +225,7 @@ class appmaker
         $body .= '    </div>'."\r\n";
         $html = $header.$bopen.$body.$bclos.$scripts;
         $html .= '    </body>'."\r\n".'</html>';
-        self::writetofile($html, $d_file, "index", "html");
+        utilities::writetofile($html, $d_file, "index", "html");
         //self::create_form_new($tbpro, $d_file);
     }
 
@@ -291,18 +292,10 @@ class appmaker
         }
         $fnew .= "\r\n    ".'<button type="submit" class="btn btn-primary">&nbsp; Save &nbsp;</button>';
         $fnew .= "\r\n  ".'</form>'."\r\n".'</div>';
-        self::writetofile($fnew, $formdir, "new", "html");
+        utilities::writetofile($fnew, $formdir, "new", "html");
     }
 
-    private static function writetofile($content, $path, $filename, $filetype){
-        if(!file_exists($path))
-        {
-            mkdir($path, 0777, true);
-        }
-        $fp = fopen($path.$filename.".".$filetype, "w+");
-        fwrite($fp, $content, strlen($content));
-        fclose($fp);
-    }
+    
 
     private static function getFieldType($fd){
         $type_size = 0;
@@ -443,7 +436,7 @@ class appmaker
         $ibody .= '        </div></div>';
         $ibody_close ="\r\n".'  </body>'."\r\n".' </html>';
         $bcontent = $head.$ibody.$script.$ibody_close;
-        self::writetofile($bcontent, $path."/", "index", "html");
+        utilities::writetofile($bcontent, $path."/", "index", "html");
     }
 
     private static function fheaders(){
@@ -493,7 +486,7 @@ class appmaker
         $lscripts = self::fscripts();
         $lbodyc = "\r\n    ".'</body>'."\r\n  ".'</html>';
         $landpage = $lheaders.$lbodyo.$lscripts.$lbodyc;
-        self::writetofile($landpage, $path, "index", "html");
+        utilities::writetofile($landpage, $path, "index", "html");
     }
 
     private static function copy_assets(){
@@ -586,7 +579,7 @@ class appmaker
         $html_tb .= '<i onclick="toggle_display(\'dsview\');" ng-click="'.$atab.'_view_single(\'id\', x.id);" class="fas fa-eye"></i>&nbsp;&nbsp;';
         $html_tb .= '<i ng-click="'.$atab.'_delete(\'id\', x.id);" class="fas fa-trash"></i></td>&nbsp;';
         $html_tb .= "\r\n  ".'</tbody>'."\r\n".'</table>';
-        //self::writetofile($html_tb, self::$base_dir."/app/views/".$tbl."/", "index", "html");
+        //utilities::writetofile($html_tb, self::$base_dir."/app/views/".$tbl."/", "index", "html");
         return $html_tb;
     }
 
@@ -797,7 +790,7 @@ class appmaker
         $phpcode .= "\r\n\r\n".self::get_Class_method_view($table);
         $phpcode .= "\r\n\r\n".self::get_class_method_delete($table);
         $phpcode .= "\r\n}";
-        self::writetofile($phpcode, self::$base_dir."/server/", $tbl, "php");
+        utilities::writetofile($phpcode, self::$base_dir."/server/", $tbl, "php");
     }
 
     private static function create_http_api($tables){
@@ -930,7 +923,7 @@ class appmaker
         $apistr .= "\r\n".self::get_api_view();
         $apistr .= "\r\n".self::get_api_delete();
         $apistr .= "\r\n".self::get_api_close();
-        self::writetofile($apistr, self::$base_dir."/api/", $tbh."_http_api", "php");
+        utilities::writetofile($apistr, self::$base_dir."/api/", $tbh."_http_api", "php");
     }
 
     private static function create_javascript($tbls){
@@ -1105,7 +1098,7 @@ class appmaker
         $jstr .= self::get_js_view($jtb);
         $jstr .= self::get_js_update($jtb);
         $jstr .= self::get_js_delete($jtb);
-        self::writetofile($jstr, self::$base_dir."/assets/src/", $jtb, "js");
+        utilities::writetofile($jstr, self::$base_dir."/assets/src/", $jtb, "js");
     }
 
     private static function get_js_update($tbl){

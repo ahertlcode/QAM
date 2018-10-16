@@ -1,12 +1,16 @@
 <?php
 
+require "dbconfig";
+
 class apimaker
 {
     static protected $exception;
     static protected $db_config;
     static protected $fmts;
+    
     public static function makeapi($params)
     {
+        
         self::$exception = (isset($params[1]))? explode(",",str_replace("--exclude=","",$params[1])):"";
         self::$fmts = (isset($params[2]) && strpos("--report",$params[2])===1)?
             explode(",",str_replace("--report","",$params[2])):"";
@@ -21,13 +25,14 @@ class apimaker
 
     private static function getTables(){
         $db = new DbHandlers();
-        $db->servername = self::$db_config["host"];
+        /*$db->servername = self::$db_config["host"];
         $db->dbname = self::$db_config["db"];
         $db->username = self::$db_config["user"];
-        $db->password = self::$db_config["password"];
-        $tables = $db->show_dbTables($db->dbname);
-        self::makemodel($tables);
-        self::makecontroller($tables);
+        $db->password = self::$db_config["password"];*/
+        $tables = $db->show_dbTables($dbname);
+        var_export($tables);
+        //self::makemodel($tables);
+        //self::makecontroller($tables);
         //self::makeform($tables);
         //self::makereport($tables, self::$fmts);
     }

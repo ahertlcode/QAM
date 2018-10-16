@@ -1,4 +1,25 @@
 Error on line 78 in SQLSTATE[42S02]: Base table or view not found: 1146 Table 'educaredb.u' doesn't exist : 
  SQLSTATE[42S02]: Base table or view not found: 1146 Table 'educaredb.u' doesn't exist 
 
+ Error on line 41 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 41 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 42 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 42 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 42 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 42 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
+ Error on line 42 in SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) : 
+ SQLSTATE[HY000] [1045] Access denied for user ''@'localhost' (using password: NO) 
+
  

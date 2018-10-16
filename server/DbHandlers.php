@@ -3,10 +3,6 @@
 class DbHandlers
 {
     //PROPERTIES
-    public $servername = 'localhost';
-    public $username = 'root';
-    public $password = 'aherceo2$';
-    public $dbname = 'educaredb';
     private $conn;
 
     public $tableName = '';
@@ -129,9 +125,15 @@ class DbHandlers
     //ERROR LOG
     public function errorLogg()
     {
+        if (!file_exists('error')) {
+            mkdir('error', 0777, true);
+        }
         try {
             $errorMsg = "Error on line $this->errLine in $this->errMsg : \n $this->errMsg \n\n ";
-            $myfile = fopen('error/errorlog.txt', 'a+');
+            $myfile = fopen('error/errorlog.txt', 'w+');
+            //echo "$errorMsg<br/>";
+            //$doWrite = $this->writeToFile();
+
             fwrite($myfile, $errorMsg);
             fclose($myfile);
         } catch (Exception $e) {

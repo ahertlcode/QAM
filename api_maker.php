@@ -335,7 +335,18 @@ class apimaker
 
     private static function make_create_api($tb){
         $tbl = $tb["Tables_in_".self::$db_config["db"]];
-        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "create", "php");
+        $create_str = "<?php\r\n\r\n    /***\r\n      This is an http restful API that will";
+        $create_str .=" only accept a POST.\n      It meant to create a instance of $tbl, that will save.\n";
+        $create_str .="      a record into the database i.e. the model. It consumeable\n      from any";
+        $create_str .="third party application that implements a method\n      or style to cosume";
+        $create_str .="a RESTful API/webservices.\r\n      ";
+        $create_str .="The url for the API is as follows:\r\n\r\n      <b><i>http(s)://baseurl/api/v1/$tbl/create.php</i></b>\r\n\r\n";
+        $create_str .="      depending on where an how you choose to host your api\r\n";
+        $create_str .="      Its adviceable to host it in an 'api' sub-domain of your domain name\r\n";
+        $create_str .="      such that if your domain is example.com the API will be hosted at\r\n";
+        $create_str .="      api.example.com. The api url will then be:\r\n\r\n";
+        $create_str .="      <b><i>http(s)://api.example.com/api/v1/$tbl/create.php</i></b>\r\n     ***/";
+        utilities::writetofile($create_str, self::$base_dir.'/api/v1/'.$tbl.'/', "create", "php");
     }
 
     private static function make_readall_api($tb){
@@ -355,6 +366,6 @@ class apimaker
     
     private static function make_delete_api($tb){
         $tbl = $tb["Tables_in_".self::$db_config["db"]];
-        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl, "delete", "php");    
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "delete", "php");    
     }
 }

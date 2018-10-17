@@ -499,26 +499,15 @@ class appmaker
             mkdir(self::$base_dir.'/api/error', 0777, true);
             mkdir(self::$base_dir.'/server', 0777, true);
         }
-        self::xcopy('css/', self::$base_dir.'/assets/css');
-        self::xcopy('js/', self::$base_dir.'/assets/js');
-        self::xcopy('webfonts/', self::$base_dir.'/assets/webfonts');
-        self::xcopy('ckeditor/', self::$base_dir.'/assets/ckeditor');
-        self::xcopy('server/', self::$base_dir.'/server');
-        self::xcopy('server/error', self::$base_dir.'/api/error');
+        utilities::xcopy('css/', self::$base_dir.'/assets/css');
+        utilities::xcopy('js/', self::$base_dir.'/assets/js');
+        utilities::xcopy('webfonts/', self::$base_dir.'/assets/webfonts');
+        utilities::xcopy('ckeditor/', self::$base_dir.'/assets/ckeditor');
+        utilities::xcopy('server/', self::$base_dir.'/server');
+        utilities::xcopy('server/error', self::$base_dir.'/api/error');
     }
 
-    private static function xcopy($src, $dest) {
-        foreach (scandir($src) as $file) {
-        if (!is_readable($src . '/' . $file)) continue;
-        if (is_dir($src .'/' . $file) && ($file != '.') && ($file != '..') )
-        {
-            mkdir($dest . '/' . $file);
-            self::xcopy($src . '/' . $file, $dest . '/' . $file);
-        } else {
-            copy($src . '/' . $file, $dest . '/' . $file);
-        }
-        }
-    }
+    
     private static function makereport($tbs, $format=null){
         if (!is_null($format)) {
             foreach ($format as $rf) {

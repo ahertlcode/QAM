@@ -1,11 +1,11 @@
 <?php
 
 
-include_once "DbHandlers";
-include_once "dbconfig";
-include_once "api_maker";
-include_once "app_maker";
-include_once "utilities";
+include_once "dbconfig.php";
+include_once "DbHandlers.php";
+include_once "utilities.php";
+include_once "api_maker.php";
+include_once "app_maker.php";
 
 if (sizeof($argv)>1){
     //var_dump($argv);

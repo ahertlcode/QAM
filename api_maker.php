@@ -27,7 +27,7 @@ class apimaker
         $tables = $db->show_dbTables($dbname);
         self::make_readme($tables, self::$db_config);
         self::makemodel($tables);
-        self::spool_api($tables);
+        self::make_api($tables);
     }
 
     private static function table_structure($tb, $dbo){
@@ -136,7 +136,7 @@ class apimaker
         $phpcode .= "\r\n\r\n".self::get_Class_method_readOne($table);
         $phpcode .= "\r\n\r\n".self::get_class_method_update($table);
         $phpcode .= "\r\n\r\n".self::get_class_method_delete($table);
-        $phpcode .= "\r\n}";
+        $phpcode .= "\r\n    }";
         utilities::writetofile($phpcode, self::$base_dir."/classes/", $tbl, "php");
     }
 
@@ -150,10 +150,10 @@ class apimaker
     }
 
     private static function get_class_docstring(){
-        $docstr = '    /**'."\r\n";
-        $docstr .= '    This php script implements '."\r\n\r\n";
-        $docstr .= '    PHP Version 5+'."\r\n";
-        $docstr .= '    @Author: Abayomi Apetu'."\r\n";
+        $docstr = '    /**'."\r\n\r\n";
+        $docstr .= '      This php script implements '."\r\n\r\n";
+        $docstr .= '      PHP Version 5+'."\r\n";
+        $docstr .= '      @Author: Abayomi Apetu'."\r\n\r\n";
         $docstr .= '    */'."\r\n\r\n";
         return $docstr;
     }
@@ -321,5 +321,40 @@ class apimaker
         return $delstr;
     }
 
-    private static function spool_api($tbs){}
+    private static function make_api($tbs){
+        foreach ($tbs as $tb){
+            if ( self::exempted($tb) === false ){
+                self::make_create_api($tb);
+                self::make_readall_api($tb);
+                self::make_readone_api($tb);
+                self::make_update_api($tb);
+                self::make_delete_api($tb);
+            }
+        }
+    }
+
+    private static function make_create_api($tb){
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "create", "php");
+    }
+
+    private static function make_readall_api($tb){
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "read_all", "php");
+    }
+
+    private static function make_readone_api($tb){
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "read_one", "php");
+    }
+
+    private static function make_update_api($tb){
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "update", "php");
+    }
+    
+    private static function make_delete_api($tb){
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl, "delete", "php");    
+    }
 }

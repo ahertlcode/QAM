@@ -8,7 +8,6 @@ include_once "api_maker.php";
 include_once "app_maker.php";
 
 if (sizeof($argv)>1){
-    //var_dump($argv);
     $param = array();
     for ($i=2; $i<sizeof($argv); $i++){
         array_push($param, $argv[$i]);

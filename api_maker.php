@@ -333,6 +333,16 @@ class apimaker
         }
     }
 
+    private static function get_api_header($tbl){
+        $ahstr = '     header("Access-Control-Allow-Origin: *");'."\r\n";
+        $ahstr .= '    header("Content-Type: text/json");'."\r\n";
+        $ahstr .= '    ini_set("memory_limit", "1024M");'."\r\n\r\n";
+        $ahstr .= '    require "../../../classes/renderer.php";'."\r\n";
+        $ahstr .= '    require "../../../classes/'.$tbl.'.php";'."\r\n";
+        $ahstr .= '    require "../../../dbconfig.php";'."\r\n\r\n";
+        return $ahstr;
+    }
+    
     private static function make_create_api($tb){
         $tbl = $tb["Tables_in_".self::$db_config["db"]];
         $create_str = "<?php\r\n\r\n    /***\r\n      This is an http restful API that will";
@@ -346,6 +356,7 @@ class apimaker
         $create_str .="      such that if your domain is example.com the API will be hosted at\r\n";
         $create_str .="      api.example.com. The api url will then be:\r\n\r\n";
         $create_str .="      <b><i>http(s)://api.example.com/api/v1/$tbl/create.php</i></b>\r\n     ***/";
+        $create_str .="\r\n\r\n".self::get_api_header($tbl);
         utilities::writetofile($create_str, self::$base_dir.'/api/v1/'.$tbl.'/', "create", "php");
     }
 

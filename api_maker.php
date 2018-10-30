@@ -333,36 +333,92 @@ class apimaker
         }
     }
 
-    private static function get_api_header($tbl){
-        $ahstr = '     header("Access-Control-Allow-Origin: *");'."\r\n";
-        $ahstr .= '    header("Content-Type: text/json");'."\r\n";
+    private static function get_api_header($tbl, $verb){
+        $ahstr = '    header("Access-Control-Allow-Origin: *");'."\r\n";
+        $ahstr .= '    header("Content-Type: application/json; charset=UTF-8");'."\r\n";
+        $ahstr .= '    header("Access-Control-Allow-Methods: '.$verb.'");'."\r\n";
+        $ahstr .= '    header("Access-Control-Max-Age: 3600");'."\r\n";
+        $ahstr .= '    header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");'."\r\n";
         $ahstr .= '    ini_set("memory_limit", "1024M");'."\r\n\r\n";
-        $ahstr .= '    require "../../../classes/renderer.php";'."\r\n";
-        $ahstr .= '    require "../../../classes/'.$tbl.'.php";'."\r\n";
-        $ahstr .= '    require "../../../dbconfig.php";'."\r\n\r\n";
+        $ahstr .= '    //load all needed file for external functions.'."\r\n";
+        $ahstr .= '    require_once  "../../../dbconfig.php";'."\r\n";
+        $ahstr .= '    require_once  "../../../classes/'.$tbl.'.php";'."\r\n";
+        $ahstr .= '    require_once  "../../../classes/renderer.php";'."\r\n\r\n";        
         return $ahstr;
     }
     
     private static function make_create_api($tb){
         $tbl = $tb["Tables_in_".self::$db_config["db"]];
-        $create_str = "<?php\r\n\r\n    /***\r\n      This is an http restful API that will";
+        $create_str = "<?php\r\n\r\n    /***\r\n      PHP Version 5+\r\n      @Author: Abayomi Apetu\r\n\r\n      This is an http restful API that will";
         $create_str .=" only accept a POST.\n      It meant to create a instance of $tbl, that will save.\n";
         $create_str .="      a record into the database i.e. the model. It consumeable\n      from any";
         $create_str .="third party application that implements a method\n      or style to cosume";
-        $create_str .="a RESTful API/webservices.\r\n      ";
+        $create_str .=" a RESTful API/webservices.\r\n      ";
         $create_str .="The url for the API is as follows:\r\n\r\n      <b><i>http(s)://baseurl/api/v1/$tbl/create.php</i></b>\r\n\r\n";
         $create_str .="      depending on where an how you choose to host your api\r\n";
         $create_str .="      Its adviceable to host it in an 'api' sub-domain of your domain name\r\n";
         $create_str .="      such that if your domain is example.com the API will be hosted at\r\n";
         $create_str .="      api.example.com. The api url will then be:\r\n\r\n";
-        $create_str .="      <b><i>http(s)://api.example.com/api/v1/$tbl/create.php</i></b>\r\n     ***/";
-        $create_str .="\r\n\r\n".self::get_api_header($tbl);
+        $create_str .="      <b><i>http(s)://api.example.com/api/v1/$tbl/create.php</i></b>\r\n\r\n      Set all the headers necessary for seamless functioning of the API\r\n     ***/";
+        $create_str .="\r\n\r\n".self::get_api_header($tbl, "POST");
+        $create_str .="    //Create an instance of the $tbl object.\r\n";
+        $create_str .='    $'.$tbl.' = new '.ucwords(substr($tbl, 0, strlen($tbl)-1))."();\r\n\r\n";
+        $create_str .="    //Retrieve $tbl data from url or form object.\r\n";
+        $create_str .='    $data = json_decode(file_get_contents("php://input"));'."\r\n\r\n";
+        $create_str .='    //Loop through the POST dataset to retrieve data for the object instance.'."\r\n";
+        $create_str .='    foreach($data as $key => $value) {'."\r\n";
+        $create_str .='        if (!empty($data->$key)) {'."\r\n";
+        $create_str .="            //Sanitize data to remove potential harmful bits.\r\n";
+        $create_str .='            $'.$tbl.'->$key = htmlspecialchars(strip_tags($data->$key));'."\r\n";
+        $create_str .='        }'."\r\n";
+        $create_str .='    }'."\r\n\r\n";
+        $create_str .="    //create the $tbl\r\n";
+        $create_str .='    if ($'.$tbl.'->create()) {'."\r\n";
+        $create_str .="        //set response code -201 created i.e. successful!\r\n";
+        $create_str .='        http_response_code(201);'."\r\n";
+        $create_str .="        //return message to user.\r\n";
+        $create_str .='        echo json_encode(array("message"=>"'.$tbl.' was created"));'."\r\n";
+        $create_str .='    } else {'."\r\n";
+        $create_str .="        //set response code - 503 service unavailable.\r\n";
+        $create_str .='        http_response_code(503);'."\r\n";
+        $create_str .="        //return message to the user.\r\n";
+        $create_str .='        echo json_encode(array("message"=>"Unable to create '.$tbl.'"));'."\r\n";
+        $create_str .='    }'."\r\n\r\n?>";
         utilities::writetofile($create_str, self::$base_dir.'/api/v1/'.$tbl.'/', "create", "php");
     }
 
     private static function make_readall_api($tb){
         $tbl = $tb["Tables_in_".self::$db_config["db"]];
-        utilities::writetofile("my api", self::$base_dir.'/api/v1/'.$tbl.'/', "read_all", "php");
+        $tbl = $tb["Tables_in_".self::$db_config["db"]];
+        $read_str = "<?php\r\n\r\n    /***\r\n      PHP Version 5+\r\n      @Author: Abayomi Apetu\r\n\r\n      This is an http restful API that will";
+        $read_str .=" only accept a GET.\n      It meant retrieve $tbl, from the object model.\n";
+        $read_str .="      record(s) from the database i.e. the model. It consumeable\r\n      from any ";
+        $read_str .="third party application that implements a method\n      or style to cosume";
+        $read_str .=" a RESTful API/webservices.\r\n      ";
+        $read_str .="The url for the API is as follows:\r\n\r\n      <b><i>http(s)://baseurl/api/v1/$tbl/read_all.php</i></b>\r\n\r\n";
+        $read_str .="      depending on where and how you choose to host your api\r\n";
+        $read_str .="      Its adviceable to host it in an 'api' sub-domain of your domain name\r\n";
+        $read_str .="      such that if your domain is example.com the API will be hosted at\r\n";
+        $read_str .="      api.example.com. The api url will then be:\r\n\r\n";
+        $read_str .="      <b><i>http(s)://api.example.com/api/v1/$tbl/read_all.php</i></b>\r\n\r\n      Set all the headers necessary for seamless functioning of the API\r\n     ***/";
+        $read_str .="\r\n\r\n".self::get_api_header($tbl, "GET");
+        $read_str .="    //Create an instance of the $tbl object.\r\n";
+        $read_str .='    $'.$tbl.' = new '.ucwords(substr($tbl, 0, strlen($tbl)-1))."();\r\n\r\n";
+        $read_str .="    //fetch records from $tbl\r\n";
+        $read_str .='    $'.$tbl.' = $'.$tbl.'->readAll();'."\r\n";
+        $read_str .='    if (sizeof($'.$tbl.')>0){'."\r\n";
+        $read_str .='        //set response code - 200 OK'."\r\n";
+        $read_str .='        http_response_code(200);'."\r\n";
+        $read_str .='        $rend = new renderer();'."\r\n";
+        $read_str .='        //return $tbl in json format.'."\r\n";
+        $read_str .='        echo $rend->render("json", $'.$tbl.', "$tbl,<list></list>");'."\r\n";
+        $read_str .='     } else {'."\r\n";
+        $read_str .='        //set response code - 404 not found'."\r\n";
+        $read_str .='        http_response_code(404);'."\r\n";
+        $read_str .='        //return an error message for users.'."\r\n";
+        $read_str .='        echo json_encode(array("message"=>"No '.$tbl.' found!"));'."\r\n";
+        $read_str .='    }'."\r\n\r\n?>";
+        utilities::writetofile($read_str, self::$base_dir.'/api/v1/'.$tbl.'/', "read_all", "php");
     }
 
     private static function make_readone_api($tb){
